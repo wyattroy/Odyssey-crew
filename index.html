@@ -992,6 +992,47 @@ function stakeCheck(actors){
   }
 }
 
+/* ---------------------------------------------------------------- VALIDATION --- */
+// validateBeats() enforces beats-table completeness for every scene that opts into the
+// beats path: any declared beats verb must define all four bone faces {1,3,4,6}, and
+// each defined cell must be well-formed (a `tell` function + a `d` object). A broken
+// cell fails LOUD (console.error + on-screen l-bad log + throw) rather than silently
+// falling through to `{}` (closes Pitfall 10 — see .planning/research/PITFALLS.md).
+// A scene with no `beats` field at all is NOT a failure — it is a legitimate,
+// not-yet-converted scene still served by the reskin/LAND_TABLE/SEA_TABLE fallback.
+function validateBeats(){
+  const problems = [];
+  const notYetConverted = [];
+  Object.values(EPISODES).forEach(ep=>{
+    ep.scenes.forEach(sc=>{
+      if(!sc.beats){ notYetConverted.push(`${ep.id} / ${sc.name}`); return; }
+      Object.keys(sc.beats).forEach(verb=>{
+        const table = sc.beats[verb];
+        [1,3,4,6].forEach(face=>{
+          const cell = table[face];
+          if(!cell){
+            problems.push(`${ep.id} / ${sc.name} / ${verb} / face ${face}: missing cell`);
+            return;
+          }
+          const wellFormed = typeof cell.tell === 'function' && cell.d && typeof cell.d === 'object';
+          if(!wellFormed){
+            problems.push(`${ep.id} / ${sc.name} / ${verb} / face ${face}: dead cell (needs a tell function and a d object)`);
+          }
+        });
+      });
+    });
+  });
+  if(problems.length){
+    console.error('validateBeats: beats coverage problem(s) found:\n' + problems.join('\n'));
+    log(`<b>BEATS VALIDATION FAILED</b> (${problems.length}): ${problems.join(' | ')}`,'l-bad');
+    throw new Error(`validateBeats: ${problems.length} beats coverage problem(s) — ${problems.join(' | ')}`);
+  }
+  if(notYetConverted.length){
+    console.log('validateBeats: scenes not yet on the beats path (informational): ' + notYetConverted.join(', '));
+  }
+  return { ok:true, notYetConverted };
+}
+
 /* ---------------------------------------------------------------- CROSSING --- */
 function startCrossing(){
   const bag=[];
@@ -1228,6 +1269,7 @@ async function setupTroy(){
 }
 
 async function runGame(){
+  validateBeats();
   dealJourney();
   render();
   state.beatIndex = 0;
