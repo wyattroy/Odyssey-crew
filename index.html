@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odyssey Crew — Prototype</title>
+<style>
+  :root{
+    --bg:#0b1622; --bg2:#0f2033; --panel:#13273d; --panel2:#173250;
+    --ink:#e8eef5; --dim:#9fb3c8; --line:#264a6b;
+    --olive:#8fbf4a; --ration:#e0a24a; --danger:#e05a4a; --sea:#2f80c8;
+    --safe:#4ab07a; --gold:#e6c34a; --starve:#d9a441; --dead:#6b7d90;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:radial-gradient(1200px 600px at 50% -10%, #16324e 0%, var(--bg) 60%);
+    color:var(--ink); font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    line-height:1.45; min-height:100vh; padding:12px;
+  }
+  h1,h2,h3{font-weight:600; margin:0 0 .4em}
+  h1{font-size:1.5rem; letter-spacing:.5px}
+  .sub{color:var(--dim); font-style:italic; font-size:.9rem; margin:-.2em 0 1em}
+  .wrap{max-width:1100px; margin:0 auto}
+  .card{background:linear-gradient(180deg,var(--panel),var(--bg2)); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; box-shadow:0 4px 18px rgba(0,0,0,.35)}
+  button{
+    font-family:inherit; font-size:.95rem; cursor:pointer; color:var(--ink);
+    background:var(--panel2); border:1px solid var(--line); border-radius:9px;
+    padding:9px 14px; margin:4px 4px 4px 0; transition:.12s;
+  }
+  button:hover:not(:disabled){background:#20456d; border-color:#3a6ea0}
+  button:disabled{opacity:.35; cursor:not-allowed}
+  button.primary{background:linear-gradient(180deg,#2f6aa8,#255488); border-color:#3a7fbf; font-weight:600}
+  button.dare{border-color:#8a3b34}
+  button.abide{border-color:#3a7a55}
+  button.give{border-color:#8a6a2f}
+  button.sel{outline:2px solid var(--gold)}
+  label{color:var(--dim); font-size:.9rem}
+  input,select{font-family:inherit; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:7px; padding:6px 8px}
+  .row{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+  .grow{flex:1 1 auto}
+
+  /* voyage track */
+  .track{display:flex; gap:6px; flex-wrap:wrap; align-items:stretch}
+  .beat{flex:1 1 90px; min-width:78px; text-align:center; padding:8px 4px; border-radius:9px; border:1px solid var(--line); background:var(--bg2); font-size:.8rem; color:var(--dim)}
+  .beat .ic{font-size:1.3rem; display:block; line-height:1.2}
+  .beat.cur{border-color:var(--gold); background:#1d3350; color:var(--ink); box-shadow:0 0 0 1px var(--gold) inset}
+  .beat.done{opacity:.6}
+
+  /* status strip */
+  .strip{display:flex; gap:12px; flex-wrap:wrap}
+  .stat{background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:8px 12px; min-width:120px}
+  .stat .k{font-size:.72rem; color:var(--dim); text-transform:uppercase; letter-spacing:.6px}
+  .stat .v{font-size:1.25rem}
+  .hold-danger{border-color:var(--danger); box-shadow:0 0 0 1px var(--danger) inset}
+  .warn{color:var(--danger); font-size:.82rem; margin-top:2px}
+
+  /* player panels */
+  .players{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
+  .p{background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line); border-radius:11px; padding:10px}
+  .p.starving{border-color:var(--starve)}
+  .p.dead{border-color:var(--dead); opacity:.62}
+  .p.acting{box-shadow:0 0 0 2px var(--gold) inset}
+  .p .nm{font-weight:600; display:flex; justify-content:space-between; align-items:center; gap:6px}
+  .badge{font-size:.7rem; color:var(--dim); border:1px solid var(--line); border-radius:20px; padding:1px 7px; white-space:nowrap}
+  .p .res{margin-top:6px; font-size:.95rem; display:flex; gap:12px; flex-wrap:wrap}
+  .p .committing{color:var(--gold); font-size:.82rem; font-style:italic; margin-top:4px}
+  .p .bone{margin-top:4px; font-size:.85rem; color:var(--dim)}
+  .p .ctrls{margin-top:6px}
+  .tok{font-size:.8rem}
+
+  /* prompt */
+  #prompt{min-height:20px}
+  #prompt .q{font-size:1.02rem; margin-bottom:6px}
+  #prompt .hint{color:var(--dim); font-size:.85rem; margin-bottom:8px}
+  .passgate{text-align:center; padding:18px}
+
+  /* log */
+  #log{max-height:300px; overflow-y:auto; font-size:.9rem; padding-right:6px}
+  #log .e{padding:3px 0; border-bottom:1px solid rgba(255,255,255,.04)}
+  .l-sys{color:var(--dim)}
+  .l-eat{color:#8fc8e0}
+  .l-act{color:var(--ink)}
+  .l-favor{color:var(--olive)}
+  .l-bad{color:var(--danger)}
+  .l-good{color:var(--safe)}
+  .l-beat{color:var(--gold); font-weight:600; margin-top:4px}
+  .l-die{color:var(--danger); font-weight:600}
+  .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+  .flavor{font-style:italic; color:#cfe0d0}
+  .scene-hook{font-style:italic; color:#d8c9a6; margin:2px 0 8px; border-left:3px solid var(--line); padding-left:10px}
+  .final{font-size:1.1rem}
+  .final .win{color:var(--gold); font-weight:700}
+  .small{font-size:.82rem; color:var(--dim)}
+  .rt{float:right}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧭 Odyssey Crew <span class="small rt" id="seedTag"></span></h1>
+  <div class="sub">"Odysseus's crew all died. Will yours survive?"</div>
+
+  <!-- SETUP -->
+  <div id="setup" class="card">
+    <h2>Set the crew</h2>
+    <div class="row" style="margin-bottom:10px">
+      <label>Humans:
+        <select id="humanCount">
+          <option value="0">0 — full-auto demo</option>
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </label>
+      <label>Seed (optional): <input id="seedIn" size="10" placeholder="random"></label>
+      <label><input type="checkbox" id="directorIn"> Director mode (no masking)</label>
+      <label>Bot speed:
+        <select id="botSpeedIn"><option value="0">instant</option><option value="550" selected>brief pause</option></select>
+      </label>
+    </div>
+    <div id="seatSetup" class="players"></div>
+    <div style="margin-top:12px">
+      <button class="primary" id="startBtn">⛵ Start the voyage</button>
+      <span class="small">4 seats always. Humans take P1…Pn; the rest are bots.</span>
+    </div>
+  </div>
+
+  <!-- GAME -->
+  <div id="game" class="hidden">
+    <div class="card">
+      <div class="track" id="track"></div>
+    </div>
+    <div class="card">
+      <div class="strip" id="strip"></div>
+    </div>
+    <div class="card">
+      <div class="players" id="players"></div>
+    </div>
+    <div class="card">
+      <div id="prompt"></div>
+    </div>
+    <div class="card">
+      <div class="row"><h3 class="grow">📜 Ship's log</h3>
+        <label class="small"><input type="checkbox" id="directorToggle"> director mode</label>
+        <label class="small">speed <select id="botSpeedToggle"><option value="0">instant</option><option value="550">pause</option></select></label>
+      </div>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================================
+   ODYSSEY CREW — single-file playable prototype
+   Design source of truth: MDs/create-odyssey-crew.md (build spec wins on conflict)
+   All state in one in-memory object. No storage, no network, no libraries.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- CONFIG --- */
+const CONFIG = {
+  players: 4,
+  holdStart: 6,
+  meal: 1,
+  boneWeights: { 1:0.10, 3:0.40, 4:0.40, 6:0.10 },   // weighted astragaloi
+  crossing: { blueStart:5, whiteStart:1, whitePerDraw:1 },
+  charonToll: 1,
+  troy: { min:1, max:6 },                              // take t → +t rations, +(7-t) favor
+  boastCurse: 3,                                       // Poseidon's curse added on a Boast (persistent)
+  // f(curse) → extra blue marbles seeded into future crossing bags
+  worldToExtraBlue: (curse) => Math.min(6, Math.floor(curse / 2)),
+  phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1 },
+  ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
+  lotus:   { rations:2, struckOn:[1] },               // eating lotus: +rations; these faces strand you
+  sirens:  { doomAt:6, listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1 },
+  helios:  { herd:12, doomAt:7, restraintBless:2, blessAt:2 },
+  cyclops: { need:3, drunkNeeded:2, stakeThreshold:2 },
+  bot: {
+    greedy:   { troyLow:5, troyHigh:6, dareBias:0.72, boast:true,  revealFavor:4, protectsHold:false },
+    balanced: { troyLow:3, troyHigh:4, dareBias:0.42, boast:false, revealFavor:99, protectsHold:false },
+    pious:    { troyLow:1, troyHigh:2, dareBias:0.16, boast:false, revealFavor:99, protectsHold:true },
+  }
+};
+
+/* ---------------------------------------------------------------- BONE TABLES --- */
+// data, not if-chains. verb -> face -> {you, crew, favor, world}
+const LAND_TABLE = {
+  dare:  { 1:{you:-1,crew:-1,favor:-1,world:1}, 3:{you:1},          4:{you:2},                6:{you:2,crew:2} },
+  abide: { 1:{},                                3:{you:1},          4:{you:1,crew:1},         6:{you:1,crew:1,favor:1} },
+  give:  { 1:{you:-1},                          3:{you:-1,crew:1},  4:{you:-1,crew:1},        6:{you:-1,crew:1} },
+};
+const SEA_TABLE = {
+  dare:  { 1:{you:-1,crew:-1,favor:-1},         3:{you:1,crew:-1},  4:{you:2,crew:-1},        6:{you:2,crew:2} },
+  abide: { 1:{},                                3:{you:1},          4:{you:1},                6:{you:2,crew:1} },
+  give:  { 1:{you:-1},                          3:{you:-1,crew:1},  4:{you:-1,crew:1},        6:{you:-1,crew:1} },
+};
+
+/* ---------------------------------------------------------------- RNG SEAM --- */
+function makeRng(seedStr){
+  if(!seedStr){ return Math.random; }
+  let h = 1779033703 ^ seedStr.length;
+  for(let i=0;i<seedStr.length;i++){ h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353); h = (h<<13)|(h>>>19); }
+  let a = h >>> 0;
+  return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; };
+}
+function rnd(){ return state.rng(); }
+function rint(n){ return Math.floor(rnd()*n); }
+function pick(arr){ return arr[rint(arr.length)]; }
+function throwBone(){
+  let r = rnd(), acc=0;
+  for(const face of [1,3,4,6]){ acc += CONFIG.boneWeights[face]; if(r < acc) return face; }
+  return 6;
+}
+
+/* ---------------------------------------------------------------- STATE --- */
+let state = null;
+
+function newState(opts){
+  const rng = makeRng(opts.seed);
+  const players = [];
+  for(let i=0;i<CONFIG.players;i++){
+    players.push({
+      id:i, name:opts.names[i] || ("P"+(i+1)),
+      satchel:0, favor:0, status:'alive',        // 'alive' | 'starving' | 'dead'
+      isBot: opts.isBot[i], temperament: opts.temperament[i],
+      commit:null, lastBone:null, islandFavorEarned:0, lotusStruck:false, standing:0,
+    });
+  }
+  return {
+    seed:opts.seed, rng,
+    players, humanCount:opts.humanCount,
+    directorMode:opts.directorMode, botSpeed:opts.botSpeed,
+    hold: CONFIG.holdStart,
+    journey:[], beatIndex:0,
+    phase:'SETUP_TROY',
+    crossing:{ bag:[], whitesAdded:0, atSea:false },
+    world:0,           // current episode track
+    curse:0,           // persistent Poseidon's curse (Boast) → extra blue
+    episode:null, ep:{},   // active episode + local flags
+    onIsland:false,
+    tollSkipNextCrossing:false,
+    log:[],
+    over:false,
+  };
+}
+
+/* ---------------------------------------------------------------- HELPERS --- */
+const notDead   = p => p.status !== 'dead';
+const livingPl  = () => state.players.filter(notDead);            // alive OR starving (they eat)
+const livingCount = () => livingPl().length;
+const actingPl  = () => state.players.filter(p => p.status==='alive' && !p.lotusStruck); // can Act
+const deadPl    = () => state.players.filter(p => p.status==='dead');
+const sleep = ms => new Promise(r=>setTimeout(r, ms));
+async function botPause(){ if(state.botSpeed>0) await sleep(state.botSpeed); }
+
+function applyDeltas(p, d){
+  const parts=[];
+  if(d.you){ const b=p.satchel; p.satchel=Math.max(0,p.satchel+d.you); const act=p.satchel-b; if(act) parts.push(`${act>0?'+':''}${act}🍖`); }
+  if(d.crew){ const b=state.hold; state.hold=Math.max(0,state.hold+d.crew); const act=state.hold-b; if(act) parts.push(`${act>0?'+':''}${act} hold`); }
+  if(d.favor){ p.favor+=d.favor; if(state.onIsland) p.islandFavorEarned+=d.favor; parts.push(`${d.favor>0?'+':''}${d.favor}🫒`); }
+  if(d.world){ state.world+=d.world; parts.push(`${d.world>0?'+':''}${d.world} world`); }
+  return parts.join(' · ');
+}
+
+/* logging */
+function log(html, cls){ state.log.push({html, cls:cls||'l-sys'}); renderLog(); }
+function logBeat(t){ log(t, 'l-beat'); }
+function flavor(t){ log(`<span class="flavor">${t}</span>`, 'l-sys'); }
+
+/* ---------------------------------------------------------------- DOM refs --- */
+const $ = id => document.getElementById(id);
+const el = (tag, cls, html) => { const e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; };
+
+/* ---------------------------------------------------------------- SETUP UI --- */
+const TEMPERAMENTS = ['greedy','balanced','pious'];
+const tempIcon = { greedy:'😈 greedy', balanced:'😐 balanced', pious:'😇 pious' };
+let setupSeats = [];
+
+function renderSetup(){
+  const hc = parseInt($('humanCount').value,10);
+  const host = $('seatSetup'); host.innerHTML='';
+  for(let i=0;i<CONFIG.players;i++){
+    if(!setupSeats[i]) setupSeats[i] = { name:'', temperament: TEMPERAMENTS[i%3] };
+    const isHuman = i < hc;
+    const c = el('div','p');
+    c.innerHTML = `<div class="nm">P${i+1} <span class="badge">${isHuman?'🙂 human':'🤖 bot'}</span></div>`;
+    const nameIn = el('input'); nameIn.placeholder = isHuman?`Human ${i+1} name`:`Bot ${i+1} name`;
+    nameIn.value = setupSeats[i].name; nameIn.style.marginTop='6px'; nameIn.style.width='100%';
+    nameIn.oninput = e => setupSeats[i].name = e.target.value;
+    c.appendChild(nameIn);
+    if(!isHuman){
+      const wrap = el('div','row'); wrap.style.marginTop='6px';
+      const sel = el('select');
+      TEMPERAMENTS.forEach(t=>{ const o=el('option',null,tempIcon[t]); o.value=t; if(t===setupSeats[i].temperament)o.selected=true; sel.appendChild(o); });
+      sel.onchange = e => setupSeats[i].temperament = e.target.value;
+      const roll = el('button',null,'🎲'); roll.title='re-roll temperament';
+      roll.onclick = ()=>{ setupSeats[i].temperament = pick(TEMPERAMENTS); renderSetup(); };
+      wrap.appendChild(sel); wrap.appendChild(roll);
+      c.appendChild(wrap);
+    }
+    host.appendChild(c);
+  }
+}
+$('humanCount').onchange = renderSetup;
+renderSetup();
+
+$('startBtn').onclick = () => {
+  const hc = parseInt($('humanCount').value,10);
+  const seedRaw = $('seedIn').value.trim();
+  const opts = {
+    humanCount: hc,
+    seed: seedRaw || null,
+    directorMode: $('directorIn').checked || hc<=1,
+    botSpeed: parseInt($('botSpeedIn').value,10),
+    names: setupSeats.map(s=>s.name),
+    isBot: [],
+    temperament: [],
+  };
+  for(let i=0;i<CONFIG.players;i++){ opts.isBot[i] = i>=hc; opts.temperament[i] = setupSeats[i].temperament; }
+  state = newState(opts);
+  $('setup').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  $('seedTag').textContent = state.seed ? ('seed: '+state.seed) : '';
+  $('directorToggle').checked = state.directorMode;
+  $('botSpeedToggle').value = String(state.botSpeed);
+  $('directorToggle').onchange = e => state.directorMode = e.target.checked;
+  $('botSpeedToggle').onchange = e => state.botSpeed = parseInt(e.target.value,10);
+  render();
+  runGame().catch(err=>{ console.error(err); log('<b>ENGINE ERROR:</b> '+err.message+' — see console','l-bad'); });
+};
+
+/* auto-start from ?seed= is wired at the very end of the script (after all
+   episode/const declarations) to avoid touching them in the temporal dead zone. */
+function initFromUrl(){
+  const q = new URLSearchParams(location.search);
+  if(q.has('seed')) $('seedIn').value = q.get('seed');
+  if(q.has('humans')) $('humanCount').value = q.get('humans');
+  if(q.has('speed')) $('botSpeedIn').value = q.get('speed');
+  renderSetup();
+  if(q.get('auto')==='1'){ if(!q.has('humans')) $('humanCount').value='0'; if(!q.has('speed')) $('botSpeedIn').value='0'; renderSetup(); $('startBtn').click(); }
+}
+
+/* ---------------------------------------------------------------- RENDER --- */
+const BEATS_META = [
+  {ic:'⚓', nm:'Troy'}, {ic:'🏝️', nm:'Island 1'}, {ic:'🏝️', nm:'Island 2'},
+  {ic:'💀', nm:'Hades'}, {ic:'🏝️', nm:'Island 3'}, {ic:'🏝️', nm:'Island 4'},
+  {ic:'🏛️', nm:'Phaeacia'}, {ic:'🏰', nm:'Ithaca'},
+];
+function render(){ renderTrack(); renderStrip(); renderPlayers(); }
+
+function renderTrack(){
+  const t = $('track'); t.innerHTML='';
+  state.journey.forEach((b,i)=>{
+    const m = BEATS_META[i];
+    const d = el('div','beat'+(i===state.beatIndex?' cur':'')+(i<state.beatIndex?' done':''));
+    let label = m.nm, ic = m.ic;
+    if(b.type==='island'){ label = b.revealed ? b.episode.title : 'Island ?'; ic = b.revealed ? '🏝️' : '🎴'; }
+    d.innerHTML = `<span class="ic">${ic}</span>${label}`;
+    t.appendChild(d);
+  });
+}
+function renderStrip(){
+  const s = $('strip'); s.innerHTML='';
+  const lc = livingCount();
+  const holdDanger = state.hold < lc;
+  const hold = el('div','stat'+(holdDanger?' hold-danger':''));
+  hold.innerHTML = `<div class="k">Ship's hold</div><div class="v">🛢️ ${state.hold}</div>`
+    + (holdDanger?`<div class="warn">can't feed everyone who reaches (${lc} living)</div>`:`<div class="small">safe line: ${lc}</div>`);
+  s.appendChild(hold);
+  if(state.crossing.atSea){
+    const bag = state.crossing.bag;
+    const blue = bag.filter(x=>x==='blue').length, white = bag.filter(x=>x==='white').length;
+    const total = bag.length;
+    const cross = el('div','stat');
+    cross.innerHTML = `<div class="k">Crossing bag</div><div class="v">🔵×${blue} ⚪×${white}</div>`
+      + `<div class="small">land next: ${total? white+'-in-'+total : '—'}</div>`;
+    s.appendChild(cross);
+  }
+  if(state.onIsland && state.episode && state.episode.doomAt!=null){
+    const w = el('div','stat'+(state.world>=state.episode.doomAt?' hold-danger':''));
+    w.innerHTML = `<div class="k">${state.episode.trackName||'World'}</div><div class="v">🌩️ ${state.world}</div><div class="small">doom at ${state.episode.doomAt}</div>`;
+    s.appendChild(w);
+  }
+  if(state.curse>0){
+    const c = el('div','stat'); c.innerHTML=`<div class="k">Poseidon's curse</div><div class="v">🌊 ${state.curse}</div><div class="small">+${CONFIG.worldToExtraBlue(state.curse)} blue / leg</div>`;
+    s.appendChild(c);
+  }
+}
+function statusTok(p){
+  if(p.status==='dead') return '💀 dead';
+  if(p.status==='starving') return '🟡 starving';
+  if(p.lotusStruck) return '🌸 lotus-struck';
+  return '🟢 alive';
+}
+function renderPlayers(){
+  const host = $('players'); host.innerHTML='';
+  state.players.forEach(p=>{
+    const cls = 'p'+(p.status==='dead'?' dead':'')+(p.status==='starving'?' starving':'')+(p._acting?' acting':'');
+    const c = el('div',cls);
+    const badge = p.isBot ? `🤖 ${tempIcon[p.temperament]}` : '🙂 human';
+    c.innerHTML = `<div class="nm">${p.name} <span class="badge">${badge}</span></div>
+      <div class="res"><span>🍖 ${p.satchel}</span><span>🫒 ${p.favor}</span><span class="tok">${statusTok(p)}</span></div>`;
+    if(p._committing) c.appendChild(el('div','committing', p.isBot?'🤖 committing…':'✍️ choosing…'));
+    if(p._boneShow!=null) c.appendChild(el('div','bone', `🎲 ${p._boneShow}${p._delta?(' → '+p._delta):''}`));
+    const slot = el('div','ctrls'); slot.id='ctrl-'+p.id; c.appendChild(slot);
+    host.appendChild(c);
+  });
+}
+function renderLog(){
+  const l = $('log'); if(!l) return;
+  // append only new entries for smoothness
+  while(l.childNodes.length < state.log.length){
+    const e = state.log[l.childNodes.length];
+    l.appendChild(el('div','e '+e.cls, e.html));
+  }
+  l.scrollTop = l.scrollHeight;
+}
+function clearBones(){ state.players.forEach(p=>{ p._boneShow=null; p._delta=null; p._committing=false; p._acting=false; }); }
+
+/* ---------------------------------------------------------------- PROMPT / INPUT --- */
+let pendingResolve = null;
+function clearPrompt(){ $('prompt').innerHTML=''; state.players.forEach(p=>{ const s=$('ctrl-'+p.id); if(s) s.innerHTML=''; }); }
+function askResolve(v){ const r=pendingResolve; pendingResolve=null; clearPrompt(); if(r) r(v); }
+
+function promptButtons(q, hint, buttons, seatId){
+  // buttons: [{label, value, cls, disabled}]
+  return new Promise(res=>{
+    pendingResolve = res;
+    const box = $('prompt');
+    box.innerHTML = `<div class="q">${q}</div>`+(hint?`<div class="hint">${hint}</div>`:'');
+    const holder = (seatId!=null && !state.directorMode) ? el('div') : box;
+    buttons.forEach(b=>{
+      const btn = el('button', (b.cls||'')+(b.primary?' primary':''), b.label);
+      if(b.disabled) btn.disabled=true;
+      btn.onclick = ()=> askResolve(b.value);
+      holder.appendChild(btn);
+    });
+    if(holder!==box){ const slot=$('ctrl-'+seatId); if(slot){ slot.innerHTML=''; slot.appendChild(holder);} else box.appendChild(holder); }
+  });
+}
+function passGate(p){
+  return new Promise(res=>{
+    pendingResolve = res;
+    $('prompt').innerHTML = `<div class="passgate"><div class="q">🫡 Pass to ${p.name}</div>
+      <div class="hint">Others look away — ${p.name}'s choice is secret.</div>
+      <button class="primary" id="pgBtn">Tap when ready</button></div>`;
+    $('pgBtn').onclick = ()=> askResolve(true);
+  });
+}
+
+/* The single bot/human seam. kind ∈ 'troy'|'eat'|'act'|'pride'|'revive'|'patience' */
+async function collectCommits(seats, kind, ctx){
+  ctx = ctx || {};
+  const humans = seats.filter(s=>!s.isBot);
+  // 1) bots commit silently & instantly
+  seats.filter(s=>s.isBot).forEach(b=>{ b.commit = botDecide(b, kind, ctx); });
+  // 2) humans commit (masked between humans unless director mode / single human)
+  const masked = !state.directorMode && humans.length>1;
+  for(const h of humans){
+    if(masked){ h._committing=false; renderPlayers(); await passGate(h); }
+    h._committing=true; renderPlayers();
+    h.commit = await askHuman(h, kind, ctx);
+    h._committing=false; renderPlayers();
+  }
+  return seats.map(s=>s.commit);
+}
+
+async function askHuman(p, kind, ctx){
+  if(kind==='troy'){
+    const btns=[]; for(let t=CONFIG.troy.min;t<=CONFIG.troy.max;t++) btns.push({label:`Take ${t} 🍖 (+${7-t}🫒)`, value:t});
+    return promptButtons(`${p.name}: how much do you take from the sack of Troy?`,
+      `Greed buys survival now (rations). Restraint buys favor (and favor buys second lives later).`, btns, p.id);
+  }
+  if(kind==='eat'){
+    return promptButtons(`${p.name}: where do you eat? <span class="small">(blind — you can't fall back once you reach for the hold)</span>`,
+      `Satchel spends your own 🍖 (${p.satchel} left). Hold spends shared stores (🛢️ ${state.hold}) — but if too many reach, lots are cast and the lowest bone misses the meal.`,
+      [ {label:`🍖 Eat my satchel (${p.satchel})`, value:'satchel', disabled:false},
+        {label:`🛢️ Reach for the hold`, value:'hold'} ], p.id);
+  }
+  if(kind==='act'){
+    const env = ctx.env, sc = ctx.scene;
+    const lab = sc && sc.verbs ? sc.verbs : null;
+    const dL = lab&&lab.dare ? lab.dare.label : (env==='sea'?'Dare — fish a sea monster':'Dare — transgress, grab for yourself');
+    const aL = lab&&lab.abide? lab.abide.label: (env==='sea'?'Abide — fish with a rod':'Abide — uphold the law (the favor road)');
+    const gL = lab&&lab.give ? lab.give.label : 'Give — move a 🍖 into the hold';
+    const giveIllegal = p.satchel < 1;
+    return promptButtons(`${p.name}: your move`,
+      `Committed in secret. All throw bones together, then reveal one by one.`,
+      [ {label:`⚔️ ${dL}`, value:'dare', cls:'dare'},
+        {label:`🕊️ ${aL}`, value:'abide', cls:'abide'},
+        {label:`🤲 ${gL}`+(giveIllegal?' (no 🍖)':''), value:'give', cls:'give', disabled:giveIllegal} ], p.id);
+  }
+  if(kind==='pride'){
+    return promptButtons(`${p.name}: the escape — do you boast?`,
+      `Hold your tongue (humble, safe) or Boast "It was Odysseus!" for a lump of kleos now — but it curses the ship (Poseidon worsens every future crossing).`,
+      [ {label:'🤐 Hold your tongue', value:'abide', cls:'abide'},
+        {label:'📣 Boast! (+kleos, curse the ship)', value:'dare', cls:'dare'} ], p.id);
+  }
+  if(kind==='revive'){
+    return promptButtons(`${p.name}: you are among the dead. Pay Charon's toll?`,
+      `Pay ${CONFIG.charonToll}🫒 to cross back and rejoin the ship (you have ${p.favor}🫒).`,
+      [ {label:`⛵ Pay ${CONFIG.charonToll}🫒 to return`, value:'pay', disabled:p.favor<CONFIG.charonToll},
+        {label:'💀 Remain in the dark', value:'stay'} ], p.id);
+  }
+  if(kind==='orpheus'){
+    const d = ctx.dead;
+    return promptButtons(`${p.name}: raise ${d.name} from the dead? (Orpheus)`,
+      `Spend ${CONFIG.charonToll} of your own 🫒 (you have ${p.favor}) to bring ${d.name} back. Or let them lie to keep your lead.`,
+      [ {label:`🎼 Pay ${CONFIG.charonToll}🫒 to raise ${d.name}`, value:'pay', disabled:p.favor<CONFIG.charonToll},
+        {label:'…let them lie', value:'no'} ], p.id);
+  }
+  if(kind==='patience'){
+    return promptButtons(`${p.name}: disguised in your own hall — endure the insults, or reveal yourself?`,
+      `Endure banks standing toward the bow (+${CONFIG.ithaca.endureBonus}). Revealing early is tempting but forfeits standing (−${CONFIG.ithaca.patiencePenalty}).`,
+      [ {label:'🧎 Endure (patience)', value:'endure', cls:'abide'},
+        {label:'🗡️ Reveal yourself now', value:'reveal', cls:'dare'} ], p.id);
+  }
+  return null;
+}
+
+/* ---------------------------------------------------------------- BOT POLICY --- */
+function botDecide(p, kind, ctx){
+  const T = CONFIG.bot[p.temperament] || CONFIG.bot.balanced;
+  const lc = livingCount();
+  if(kind==='troy'){
+    let t = T.troyLow + rint(T.troyHigh - T.troyLow + 1);
+    t += (rnd()<0.5?-1:1)*(rnd()<0.5?1:0);       // ±1 jitter
+    return Math.max(CONFIG.troy.min, Math.min(CONFIG.troy.max, t));
+  }
+  if(kind==='eat'){
+    if(p.satchel<=0) return 'hold';                    // forced
+    const holdSafe = state.hold >= lc;
+    if(holdSafe){
+      if(p.temperament==='pious' && state.hold === lc) return 'satchel'; // don't strain a just-safe hold
+      return 'hold';                                    // spare my satchel
+    }
+    // hold is short
+    if(p.temperament==='greedy' && rnd()<0.5) return 'hold';           // gamble
+    if(p.satchel===1 && rnd()<0.5) return 'hold';                      // last-ration reasoning
+    return 'satchel';
+  }
+  if(kind==='act'){
+    return botAct(p, ctx, T);
+  }
+  if(kind==='pride'){
+    return (T.boast && rnd()<0.7) ? 'dare' : 'abide';
+  }
+  if(kind==='revive'){
+    return p.favor>=CONFIG.charonToll ? 'pay' : 'stay';
+  }
+  if(kind==='orpheus'){
+    const d = ctx.dead;
+    const canSpare = p.favor - CONFIG.charonToll >= CONFIG.ithaca.bowFloor;
+    if(!canSpare) return 'no';
+    if(p.temperament==='pious') return 'pay';
+    if(p.temperament==='balanced' && livingCount()<=2) return 'pay';
+    return 'no';
+  }
+  if(kind==='patience'){
+    if(p.temperament==='greedy' && p.favor>=T.revealFavor && rnd()<0.6) return 'reveal';
+    return 'endure';
+  }
+  return null;
+}
+
+function botAct(p, ctx, T){
+  const env = ctx.env, ep = state.episode, sc = ctx.scene, lc = livingCount();
+  const canGive = p.satchel>=1;
+  const holdShort = state.hold < lc;
+  const hungry = p.satchel<=1 && !(state.hold>lc);
+  const give = ()=> canGive ? 'give' : 'abide';
+
+  // ---- episode overrides (respect the scene's shape) ----
+  if(ep){
+    if(ep.id==='helios'){
+      if(p.temperament==='pious') return 'abide';
+      if(state.hold<=1 && canGive) return 'give';
+      if((hungry || p.temperament==='greedy') && rnd()<T.dareBias+0.15) return 'dare';
+      return 'abide';
+    }
+    if(ep.id==='cyclops'){
+      if(ctx.sceneIndex===0){ // The Wine: get him drunk
+        if(state.hold>=1 && rnd()<0.7) return 'give';   // pour wine
+        return 'abide';                                  // cower
+      }
+      if(ctx.sceneIndex===1){ // The Stake: dare together when drunk
+        if(state.ep.drunk >= CONFIG.cyclops.drunkNeeded) return 'dare';
+        if(state.hold>=1 && rnd()<0.5) return 'give';    // more wine
+        return 'abide';
+      }
+      if(ctx.sceneIndex===2){ return 'dare'; }           // slip out under the sheep
+    }
+    if(ep.id==='sirens'){
+      if(p.temperament==='greedy') return 'dare';         // listen
+      if(state.world>=CONFIG.sirens.doomAt-2 && canGive) return 'give'; // bind, protect
+      if(p.temperament==='pious') return canGive?'give':'abide';
+      return 'abide';
+    }
+    if(ep.id==='lotus'){
+      if(ctx.sceneIndex===1){ // rescue scene: clear-headed pious go back for a mate
+        const struck = state.players.find(x=>x.lotusStruck && notDead(x));
+        if(struck && (p.temperament!=='greedy') && canGive) return 'dare';
+        return 'abide';
+      }
+      // scene 0 / other: greedy eat the lotus, pious resist
+      if(p.temperament==='greedy') return 'dare';
+      if(p.temperament==='pious') return 'abide';
+      return rnd()<0.5?'dare':'abide';
+    }
+  }
+
+  // ---- generic policy ----
+  if(hungry && rnd() < T.dareBias + 0.2) return 'dare';                 // grab / fish to refill
+  if(holdShort && canGive && (T.protectsHold || rnd()<0.4)) return 'give';
+  if(!holdShort && rnd() < (p.temperament==='pious'?0.7:0.45)) return 'abide'; // favor road
+  if(rnd() < T.dareBias) return 'dare';
+  return canGive && rnd()<0.3 ? 'give' : 'abide';
+}
+
+/* ---------------------------------------------------------------- EAT PHASE --- */
+async function eatPhase(){
+  const eaters = livingPl();
+  if(eaters.length===0) return;
+  eaters.forEach(p=>p._committing=true); renderPlayers();
+  await collectCommits(eaters, 'eat', {});
+  clearBones(); renderPlayers();
+
+  const satchelEaters = eaters.filter(p=>p.commit==='satchel');
+  const holdReachers  = eaters.filter(p=>p.commit==='hold');
+
+  // satchel eaters resolve immediately
+  for(const p of satchelEaters){
+    if(p.satchel>0){ p.satchel--; feed(p); log(`${p.name} eats from their own satchel.`,'l-eat'); }
+    else { log(`${p.name} reached into an empty satchel — no meal.`,'l-eat'); miss(p); }
+  }
+  // hold reachers
+  const R = holdReachers.length, H = state.hold;
+  if(R>0){
+    log(`${R} sailor${R>1?'s':''} reach for the hold (🛢️ ${H}).`,'l-eat');
+    if(R<=H){
+      holdReachers.forEach(p=>{ state.hold--; feed(p); });
+      log(`The hold feeds them all.`,'l-eat');
+    } else {
+      // all reachers cast lots; lowest (R-H) miss
+      const losersNeeded = R - H;
+      holdReachers.forEach(p=>{ p.lastBone=throwBone(); p._boneShow=p.lastBone; });
+      renderPlayers();
+      const losers = pickLowest(holdReachers, losersNeeded);
+      const winners = holdReachers.filter(p=>!losers.includes(p));
+      // hold feeds H of them (winners), then empties
+      winners.forEach(p=>feed(p));
+      state.hold = Math.max(0, state.hold - winners.length);
+      log(`The hold is short — lots are cast: ${holdReachers.map(p=>`${p.name}🎲${p.lastBone}`).join(', ')}.`,'l-bad');
+      losers.forEach(p=>{ log(`${p.name} drew low and misses the meal.`,'l-bad'); miss(p); });
+      state.hold = 0;
+      await botPause();
+    }
+  }
+  renderPlayers();
+}
+function feed(p){ if(p.status==='starving'){ p.status='alive'; log(`${p.name} eats and is no longer starving.`,'l-good'); } }
+function miss(p){
+  if(p.status==='starving'){ p.status='dead'; p.satchel=0; p.lotusStruck=false; log(`💀 ${p.name} misses a second meal and dies. Their satchel spills to the sea; their soul goes to the shore of the dead.`,'l-die'); }
+  else if(p.status==='alive'){ p.status='starving'; log(`${p.name} is now starving — too weak to act next turn.`,'l-bad'); }
+}
+function pickLowest(players, n){
+  // choose n lowest by bone; resolve boundary ties by re-throw among tied
+  let pool = players.slice();
+  const losers = [];
+  while(losers.length < n){
+    const min = Math.min(...pool.map(p=>p.lastBone));
+    let tied = pool.filter(p=>p.lastBone===min);
+    const need = n - losers.length;
+    if(tied.length <= need){ tied.forEach(p=>losers.push(p)); pool = pool.filter(p=>!tied.includes(p)); }
+    else {
+      // re-throw among tied until we can separate `need` losers
+      tied.forEach(p=>{ p.lastBone=throwBone(); p._boneShow=p.lastBone; });
+      log(`Tie at the barrel — ${tied.map(p=>p.name).join(', ')} re-cast: ${tied.map(p=>`${p.name}🎲${p.lastBone}`).join(', ')}.`,'l-bad');
+      // loop continues; if still tied it re-throws again
+    }
+  }
+  return losers;
+}
+
+/* ---------------------------------------------------------------- ACT PHASE --- */
+async function actPhase(env, scene, sceneIndex){
+  const actors = actingPl();
+  const skipped = state.players.filter(p=>p.status==='starving');
+  skipped.forEach(p=>log(`${p.name} is starving — their Act is skipped.`,'l-sys'));
+  state.players.filter(p=>p.lotusStruck && notDead(p)).forEach(p=>log(`${p.name} drifts, lotus-struck — cannot act.`,'l-sys'));
+  if(actors.length===0){ log(`No one is able to act.`,'l-sys'); return; }
+
+  clearBones();
+  actors.forEach(p=>{ p._acting=true; p._committing=true; });
+  renderPlayers();
+  await collectCommits(actors, 'act', {env, scene, sceneIndex});
+  actors.forEach(p=>p._committing=false); renderPlayers();
+
+  // throw all bones, then reveal one at a time
+  actors.forEach(p=>{ p.lastBone = throwBone(); });
+  const table = env==='sea' ? SEA_TABLE : LAND_TABLE;
+  for(const p of actors){
+    p._boneShow = p.lastBone;
+    let delta;
+    if(scene && scene.reskin && scene.reskin[p.commit]){
+      delta = scene.reskin[p.commit](p, p.lastBone);        // custom: returns narration
+    } else {
+      const d = table[p.commit][p.lastBone] || {};
+      const applied = applyDeltas(p, d);
+      delta = applied || 'no change';
+      log(`${p.name} ${verbWord(p.commit,env)} 🎲${p.lastBone} → ${applied||'nothing stirs'}.`,'l-act');
+    }
+    p._delta = delta;
+    renderPlayers();
+    await botPause();
+  }
+  // collective check for the scene
+  if(scene && scene.collectiveCheck){ scene.collectiveCheck(actors); renderStrip(); }
+  renderStrip(); renderPlayers();
+}
+function verbWord(v, env){
+  if(v==='dare') return env==='sea'?'fishes for a monster':'dares';
+  if(v==='abide') return env==='sea'?'fishes with a rod':'abides';
+  return 'gives';
+}
+
+/* ---------------------------------------------------------------- EPISODES --- */
+// A scene may provide verb labels, reskin handlers (custom resolve returning narration),
+// a collectiveCheck, plus episode-level onDepart / doom track.
+function mkHeliosDare(){
+  return (p,b)=>{
+    const d = Object.assign({}, LAND_TABLE.dare[b]);
+    let extra='';
+    if(b===1){ d.world = (d.world||0)+1; extra=' — <b>seen by the Sun!</b>'; }
+    const s = applyDeltas(p,d);
+    log(`${p.name} slaughters a cow 🐄 🎲${b} → ${s}${extra}`, b===1?'l-bad':'l-act');
+    return s;
+  };
+}
+const EPISODES = {
+  helios: {
+    id:'helios', title:'Cattle of Helios', trackName:"Helios's Wrath", worldStart:0, doomAt:CONFIG.helios.doomAt,
+    hook:'A meadow of golden cattle, forbidden. The hold is low and Ithaca is close. Every private hunger raises a shared doom.',
+    scenes:[
+      { name:'The Meadow', hook:'The herd gleams. Odysseus warns: touch nothing.',
+        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — restraint (the pious road)'}, give:{label:'Give — feed the hold'}},
+        reskin:{ dare: mkHeliosDare() } },
+      { name:'The Hunger', hook:'Days pass. The rod brings nothing. Bellies growl against the vow.',
+        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — hold out'}, give:{label:'Give — feed the hold'}},
+        reskin:{ dare: mkHeliosDare() } },
+      { name:'The Reckoning', hook:'The hides crawl, the spitted meat lows. Helios counts his herd.',
+        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — repent'}, give:{label:'Give — feed the hold'}},
+        reskin:{ dare: mkHeliosDare() } },
+    ],
+    onDepart(){
+      if(state.world >= this.doomAt){
+        log(`☀️ Helios's Wrath hits ${state.world}. As the ship departs, the sea rises and swallows it — everyone drowns.`,'l-die');
+        livingPl().forEach(p=>{ p.status='dead'; p.satchel=0; p.lotusStruck=false; });
+        flavor('All who still carry favor may pay Charon and wash ashore.');
+      } else if(state.world <= CONFIG.helios.blessAt){
+        log(`☀️ The herd stayed nearly whole (wrath ${state.world}). Helios blesses restraint — +${CONFIG.helios.restraintBless}🫒 to all living.`,'l-favor');
+        livingPl().forEach(p=>{ p.favor+=CONFIG.helios.restraintBless; if(state.onIsland)p.islandFavorEarned+=CONFIG.helios.restraintBless; });
+      } else {
+        log(`☀️ The ship escapes Thrinacia — Helios simmers (wrath ${state.world}) but holds his hand.`,'l-sys');
+      }
+    }
+  },
+
+  cyclops: {
+    id:'cyclops', title:'The Cyclops', trackName:'Escape', worldStart:0, doomAt:null, need:CONFIG.cyclops.need,
+    hook:'Trapped in the cave, a boulder across the mouth. Polyphemus feeds on the idle. Only wine and cunning open the way.',
+    scenes:[
+      { name:'The Wine', hook:'The giant sprawls. Odysseus offers a skin of dark wine.',
+        verbs:{dare:{label:'Dare — attack him sober (needs a 6)'}, abide:{label:'Abide — cower unseen'}, give:{label:'Give — pour wine (make him drunk)'}},
+        reskin:{
+          give:(p,b)=>{ if(state.hold>0)state.hold--; state.ep.drunk++; log(`${p.name} pours wine 🍷 🎲${b} → Polyphemus is drunker (drunk ${state.ep.drunk}).`,'l-act'); return `drunk +1`; },
+          abide:(p,b)=>{ log(`${p.name} cowers in the shadows 🎲${b}.`,'l-sys'); return 'safe'; },
+          dare:(p,b)=>{ if(b===6){ state.ep.progress++; log(`${p.name} strikes sober and lands a blow! 🎲6 → escape ${state.ep.progress}/${state.episode.need}.`,'l-good'); return 'progress +1'; } const s=applyDeltas(p,{you:-1}); log(`${p.name} attacks sober 🎲${b} — folly. ${s}`,'l-bad'); return s; },
+        },
+        collectiveCheck(){ polyphemusHunger(state.ep.drunk>state.ep._drunkBefore || state.ep.progress>state.ep._progBefore); }
+      },
+      { name:'The Stake', hook:'With the giant snoring drunk, the crew heaves the glowing stake.',
+        verbs:{dare:{label:'Dare — drive the stake home'}, abide:{label:'Abide — brace the stake'}, give:{label:'Give — pour more wine'}},
+        reskin:{
+          give:(p,b)=>{ if(state.hold>0)state.hold--; state.ep.drunk++; log(`${p.name} keeps him under with more wine (drunk ${state.ep.drunk}).`,'l-sys'); return 'drunk +1'; },
+          abide:(p,b)=>{ log(`${p.name} braces the stake 🎲${b}.`,'l-sys'); return 'braced'; },
+          dare:(p,b)=>{ log(`${p.name} drives the stake 🎲${b}.`,'l-act'); return `bone ${b}`; },
+        },
+        collectiveCheck(actors){ stakeCheck(actors); }
+      },
+      { name:'Under the Sheep', hook:'Blinded, he gropes. Cling to the wool and slip past — then the sea, and the terrible temptation to be known.',
+        verbs:{dare:{label:'Dare — slip out under the wool'}, abide:{label:'Abide — wait, cling tight'}, give:{label:'Give — steady a mate'}},
+        reskin:{
+          dare:(p,b)=>{ state.ep.progress++; log(`${p.name} slips out under a ram 🎲${b} → escape ${state.ep.progress}/${state.episode.need}.`,'l-good'); return 'progress +1'; },
+          abide:(p,b)=>{ log(`${p.name} clings and waits 🎲${b}.`,'l-sys'); return 'safe'; },
+          give:(p,b)=>{ if(p.satchel>0){p.satchel--; state.hold++;} log(`${p.name} steadies a mate 🎲${b}.`,'l-sys'); return 'helped'; },
+        },
+      },
+    ],
+    async prideSubCommit(){
+      const survivors = actingPl();
+      if(survivors.length===0) return;
+      logBeat('— The Pride —');
+      flavor('Safe on the water. Each sailor decides, in secret, whether to shout their name back at the shore.');
+      await collectCommits(survivors, 'pride', {});
+      for(const p of survivors){
+        if(p.commit==='dare'){
+          p.favor+=3; if(state.onIsland)p.islandFavorEarned+=3;
+          state.curse += CONFIG.boastCurse;
+          log(`📣 ${p.name} BOASTS "It was Odysseus!" — +3🫒 kleos now, but Poseidon's curse deepens to ${state.curse}. Every future crossing will be longer and hungrier.`,'l-bad');
+        } else {
+          log(`🤐 ${p.name} holds their tongue.`,'l-sys');
+        }
+      }
+    },
+    onDepart(){
+      if(state.ep.progress < this.need){
+        const victim = pick(livingPl());
+        if(victim){ log(`The crew never fully broke free — Polyphemus seizes ${victim.name} at the mouth of the cave.`,'l-die'); victim.status='dead'; victim.satchel=0; victim.favor=Math.max(0,victim.favor-victim.islandFavorEarned); }
+      } else {
+        log(`The ship pulls away from the Cyclops's isle.`,'l-sys');
+      }
+    }
+  },
+
+  sirens: {
+    id:'sirens', title:'The Sirens', trackName:'The Rocks', worldStart:0, doomAt:CONFIG.sirens.doomAt,
+    hook:'A song of all knowledge drifts over the water. To hear it is glory; to steer toward it is death on the reef.',
+    scenes:[
+      { name:'The First Notes', hook:'Sweet and far. Wax in hand, rope on the mast.',
+        verbs:{dare:{label:'Dare — unstop your ears and listen'}, abide:{label:'Abide — be bound to the mast'}, give:{label:'Give — bind/stopper a mate'}},
+        reskin:sirensReskin() },
+      { name:'The Full Song', hook:'It swells — names, wars, the future. The ship leans toward the voices.',
+        verbs:{dare:{label:'Dare — listen deeper'}, abide:{label:'Abide — stay bound'}, give:{label:'Give — plug a mate\'s ears'}},
+        reskin:sirensReskin() },
+      { name:'The Reef', hook:'White water ahead. The song at its height.',
+        verbs:{dare:{label:'Dare — one last listen'}, abide:{label:'Abide — endure'}, give:{label:'Give — haul on the oar'}},
+        reskin:sirensReskin() },
+    ],
+    onDepart(){
+      if(state.world >= this.doomAt){
+        log(`🪨 The Rocks reach ${state.world} — the ship grinds onto the reef. The sea takes its due.`,'l-die');
+        livingPl().forEach(p=>{ p.lastBone=throwBone(); if(p.lastBone===1){ p.status='dead'; p.satchel=0; log(`💀 ${p.name} 🎲1 — pulled under.`,'l-die'); } });
+      } else {
+        log(`🎶 The song fades astern. The listeners keep their glorious knowledge (and favor).`,'l-favor');
+      }
+    }
+  },
+
+  lotus: {
+    id:'lotus', title:'The Lotus-Eaters', trackName:'', worldStart:0, doomAt:null,
+    hook:'A gentle shore. The natives offer honey-sweet fruit. One taste and home stops mattering.',
+    scenes:[
+      { name:'The Offering', hook:'The lotus is pressed into every hand.',
+        verbs:{dare:{label:'Dare — eat the lotus (free 🍖, risk oblivion)'}, abide:{label:'Abide — refuse the fruit'}, give:{label:'Give — share your ration'}},
+        reskin:{ dare:lotusEat, abide:(p,b)=>{ log(`${p.name} refuses the fruit 🎲${b}.`,'l-sys'); return 'clear-headed'; } } },
+      { name:'Going Back', hook:'Some sailors sit smiling in the sand, forgetting the ship. Will anyone haul them out?',
+        verbs:{dare:{label:'Dare — go back for a struck mate'}, abide:{label:'Abide — mind yourself'}, give:{label:'Give — share your ration'}},
+        reskin:{ dare:lotusRescue, abide:(p,b)=>{ log(`${p.name} keeps to the ship 🎲${b}.`,'l-sys'); return 'aboard'; } } },
+      { name:'Cast Off', hook:'The tide turns. The oars are manned. Whoever is still ashore will be left.',
+        verbs:{dare:{label:'Dare — one last rescue run'}, abide:{label:'Abide — take your oar'}, give:{label:'Give — share your ration'}},
+        reskin:{ dare:lotusRescue, abide:(p,b)=>{ log(`${p.name} takes an oar 🎲${b}.`,'l-sys'); return 'ready'; } } },
+    ],
+    onDepart(){
+      const stranded = state.players.filter(p=>p.lotusStruck && notDead(p));
+      stranded.forEach(p=>{ log(`🌸 ${p.name} is still lotus-struck as the ship sails — left behind, lost to oblivion.`,'l-die'); p.status='dead'; p.satchel=0; p.lotusStruck=false; });
+      if(stranded.length===0) log(`The whole crew is aboard as the shore of the Lotus-Eaters slips away.`,'l-good');
+    }
+  },
+};
+function sirensReskin(){
+  return {
+    dare:(p,b)=>{ const f=CONFIG.sirens.listenFavor[b]||0; if(f){p.favor+=f; if(state.onIsland)p.islandFavorEarned+=f;} state.world+=CONFIG.sirens.worldPerListen; log(`${p.name} unstops their ears and listens 🎲${b} → +${f}🫒 kleos, the Rocks rise (+${CONFIG.sirens.worldPerListen}).`, f>0?'l-favor':'l-act'); return `+${f}🫒 · rocks+${CONFIG.sirens.worldPerListen}`; },
+    abide:(p,b)=>{ log(`${p.name} stays bound to the mast 🎲${b}.`,'l-sys'); return 'bound'; },
+    give:(p,b)=>{ if(p.satchel>0)p.satchel--; state.world=Math.max(0,state.world-CONFIG.sirens.bindReduce); log(`${p.name} binds a mate / plugs their ears 🎲${b} → the Rocks recede (−${CONFIG.sirens.bindReduce}).`,'l-good'); return `rocks−${CONFIG.sirens.bindReduce}`; },
+  };
+}
+function lotusEat(p,b){
+  p.satchel += CONFIG.lotus.rations;
+  let extra='';
+  if(CONFIG.lotus.struckOn.includes(b)){ p.lotusStruck=true; extra=' — <b>the fruit takes them: lotus-struck!</b>'; }
+  log(`${p.name} eats the lotus 🎲${b} → +${CONFIG.lotus.rations}🍖${extra}`, extra?'l-bad':'l-act');
+  return `+${CONFIG.lotus.rations}🍖`+(extra?' struck':'');
+}
+function lotusRescue(p,b){
+  const struck = state.players.find(x=>x.lotusStruck && notDead(x));
+  if(struck){ struck.lotusStruck=false; if(p.satchel>0)p.satchel--; p.favor+=1; if(state.onIsland)p.islandFavorEarned+=1;
+    log(`${p.name} hauls ${struck.name} back to the ship 🎲${b} → ${struck.name} is freed; ${p.name} +1🫒.`,'l-good'); return `freed ${struck.name} · +1🫒`; }
+  log(`${p.name} looks for a struck mate but finds none 🎲${b}.`,'l-sys'); return 'none to save';
+}
+
+/* --- Cyclops collective helpers --- */
+function polyphemusHunger(progressed){
+  if(!progressed){
+    const victim = pick(livingPl());
+    if(victim){ log(`🦖 No progress — Polyphemus gropes and devours ${victim.name}! They miss the rest of the episode and lose the favor earned here.`,'l-die');
+      victim.favor = Math.max(0, victim.favor - Math.max(0,victim.islandFavorEarned));
+      victim.status='dead'; victim.satchel=0; }
+  }
+}
+function stakeCheck(actors){
+  const darers = actors.filter(p=>p.commit==='dare');
+  if(darers.length===0){ log(`No one drives the stake — the moment passes.`,'l-sys'); polyphemusHunger(false); return; }
+  if(darers.some(p=>p.lastBone===1)){
+    log(`The stake slips (a pooled 🎲1) — Polyphemus wakes, roaring!`,'l-bad');
+    const victim = pick(livingPl()); if(victim){ log(`💀 He seizes ${victim.name}.`,'l-die'); victim.status='dead'; victim.satchel=0; victim.favor=Math.max(0,victim.favor-Math.max(0,victim.islandFavorEarned)); }
+    return;
+  }
+  const highs = darers.filter(p=>p.lastBone>=4).length;
+  const threshold = Math.max(1, CONFIG.cyclops.stakeThreshold - Math.floor(state.ep.drunk/2));
+  if(highs >= threshold){
+    state.ep.progress += 2;
+    log(`🔥 The stake drives home! (${highs} high faces vs threshold ${threshold}) — Polyphemus is BLINDED. Escape ${state.ep.progress}/${state.episode.need}. +2🫒 to each darer.`,'l-good');
+    darers.forEach(p=>{ p.favor+=2; if(state.onIsland)p.islandFavorEarned+=2; });
+  } else {
+    log(`The stake glances off (${highs} high faces vs threshold ${threshold}). He stirs but sleeps on.`,'l-sys');
+  }
+}
+
+/* ---------------------------------------------------------------- CROSSING --- */
+function startCrossing(){
+  const bag=[];
+  for(let i=0;i<CONFIG.crossing.blueStart;i++) bag.push('blue');
+  for(let i=0;i<CONFIG.crossing.whiteStart;i++) bag.push('white');
+  const extra = CONFIG.worldToExtraBlue(state.curse);
+  for(let i=0;i<extra;i++) bag.push('blue');
+  state.crossing = { bag, whitesAdded:0, atSea:true };
+  if(extra>0) log(`Poseidon's curse salts the bag with ${extra} extra blue — a longer, hungrier leg.`,'l-bad');
+}
+function drawMarble(firstDraw){
+  if(!firstDraw){ state.crossing.bag.push('white'); state.crossing.whitesAdded++; }
+  const bag = state.crossing.bag;
+  const idx = rint(bag.length);
+  const m = bag.splice(idx,1)[0];
+  return m;
+}
+async function runCrossing(){
+  if(state.tollSkipNextCrossing){
+    state.tollSkipNextCrossing=false;
+    log(`⛵ The Phaeacians' magic ship skips this crossing entirely.`,'l-good');
+    return;
+  }
+  startCrossing();
+  logBeat(`🌊 A sea crossing begins.`);
+  render();
+  let first=true;
+  while(true){
+    if(deadEndCheck()) return;
+    const m = drawMarble(first); first=false;
+    renderStrip();
+    if(m==='white'){ state.crossing.atSea=false; log(`⚪ Land ho!`,'l-good'); renderStrip(); return; }
+    log(`🔵 Still at sea.`,'l-sys');
+    await eatPhase();
+    if(deadEndCheck()) return;
+    if(livingCount()>0) await actPhase('sea', null, 0);
+    render();
+    await botPause();
+  }
+}
+
+/* ---------------------------------------------------------------- BEATS --- */
+async function runIsland(beat){
+  const ep = beat.episode;
+  beat.revealed = true;
+  state.episode = ep; state.world = ep.worldStart||0; state.onIsland = true;
+  state.ep = { drunk:0, progress:0 };
+  state.players.forEach(p=>p.islandFavorEarned=0);
+  logBeat(`🏝️ ${ep.title}`);
+  flavor(ep.hook);
+  render();
+  for(let si=0; si<ep.scenes.length; si++){
+    const sc = ep.scenes[si];
+    if(deadEndCheck()) break;
+    logBeat(`Scene ${si+1}: ${sc.name}`);
+    log(`<span class="scene-hook">${sc.hook}</span>`,'l-sys');
+    state.ep._drunkBefore = state.ep.drunk; state.ep._progBefore = state.ep.progress;
+    await eatPhase();
+    if(livingCount()>0) await actPhase('land', sc, si);
+    // Cyclops scene 3 pride sub-commit
+    if(ep.id==='cyclops' && si===2 && ep.prideSubCommit) await ep.prideSubCommit();
+    render();
+    await botPause();
+  }
+  if(ep.onDepart) ep.onDepart.call(ep);
+  state.onIsland=false; state.episode=null; state.world=0;
+  render();
+}
+
+async function runHades(){
+  logBeat(`💀 Hades — the shore of the dead`);
+  flavor('You spend rations to take sight from the dead. The drowned may pay Charon to return.');
+  // peek: reveal next face-down island
+  const nextIsland = state.journey.slice(state.beatIndex+1).find(b=>b.type==='island' && !b.revealed);
+  if(nextIsland){ nextIsland.revealed=true; log(`👁️ Tiresias grants a peek: the next hidden island is <b>${nextIsland.episode.title}</b>.`,'l-favor'); renderTrack(); }
+  await revivalRound();
+  render();
+}
+async function revivalRound(){
+  const dead = deadPl();
+  if(dead.length===0){ log(`No souls wait on the shore.`,'l-sys'); return; }
+  // self-revival (Charon)
+  await collectCommits(dead, 'revive', {});
+  for(const p of dead){
+    if(p.commit==='pay' && p.favor>=CONFIG.charonToll){ p.favor-=CONFIG.charonToll; p.status='alive'; p.satchel=0; log(`⛵ ${p.name} pays Charon ${CONFIG.charonToll}🫒 and rejoins the ship.`,'l-good'); }
+    else log(`${p.name} remains among the dead.`,'l-sys');
+  }
+  // Orpheus: living may raise the still-dead
+  for(const d of deadPl()){
+    const helpers = livingPl().filter(h=>h.favor>=CONFIG.charonToll);
+    for(const h of helpers){
+      const choice = await (h.isBot ? Promise.resolve(botDecide(h,'orpheus',{dead:d})) : (async()=>{ h._committing=true; renderPlayers(); if(!state.directorMode && state.humanCount>1) await passGate(h); const c=await askHuman(h,'orpheus',{dead:d}); h._committing=false; renderPlayers(); return c; })());
+      if(choice==='pay' && h.favor>=CONFIG.charonToll){ h.favor-=CONFIG.charonToll; d.status='alive'; d.satchel=0; log(`🎼 ${h.name} spends ${CONFIG.charonToll}🫒 to raise ${d.name} from the dead (Orpheus).`,'l-favor'); break; }
+    }
+  }
+}
+
+async function runPhaeacia(){
+  logBeat(`🏛️ Phaeacia — the gift-reckoning`);
+  flavor('The one house that feeds its guests. The gods read the favor you already carry and pay you in gifts, never in favor.');
+  const lc = livingCount();
+  // Scene 1: welcome, stores refill
+  const gift = CONFIG.phaeacia.giftPerPlayer * lc;
+  state.hold += gift; log(`🎁 Scene 1 — Welcome: guest-gifts refill the hold (+${gift} → 🛢️ ${state.hold}).`,'l-good');
+  renderStrip();
+  // Scene 2: the song / judgment
+  log(`🎵 Scene 2 — The song: each sailor lays their record before the court.`,'l-sys');
+  for(const p of livingPl()){
+    const n = Math.max(CONFIG.phaeacia.poolFloor, Math.min(CONFIG.phaeacia.poolCap, p.favor));
+    const throws=[]; for(let i=0;i<n;i++) throws.push(throwBone());
+    const moved = throws.includes(6);
+    if(moved){ p.satchel += CONFIG.phaeacia.fullGiftRations; p._tollSkip=true; p._peeked=true;
+      log(`${p.name} throws ${n} bone${n>1?'s':''} [${throws.join(',')}] — a 6! The court is moved: +${CONFIG.phaeacia.fullGiftRations}🍖 and the gift-ride.`,'l-good'); }
+    else { p.satchel += CONFIG.phaeacia.lesserGiftRations;
+      log(`${p.name} throws ${n} bone${n>1?'s':''} [${throws.join(',')}] — the court gives grudgingly: +${CONFIG.phaeacia.lesserGiftRations}🍖.`,'l-sys'); }
+    await botPause();
+  }
+  // Scene 3: gift-ride → skip next crossing (into Ithaca)
+  if(livingPl().some(p=>p._tollSkip)){ state.tollSkipNextCrossing=true; log(`🛶 Scene 3 — The gift-ride: the magic ship will skip the crossing to Ithaca.`,'l-good'); }
+  render();
+}
+
+async function runIthaca(){
+  logBeat(`🏰 Ithaca — the homecoming`);
+  flavor('The voyage was what the world did to you. This is what you do now that you hold the power. The suitors have drained the house all game — the bill comes due.');
+  const living = livingPl();
+  living.forEach(p=>p.standing = p.favor);
+  // Scene 1 — Beggar (patience)
+  logBeat('Scene 1 — The Beggar (patience)');
+  await collectCommits(living, 'patience', {});
+  for(const p of living){
+    if(p.commit==='endure'){ p.standing += CONFIG.ithaca.endureBonus; log(`🧎 ${p.name} endures the insults — standing +${CONFIG.ithaca.endureBonus} (→ ${p.standing}).`,'l-good'); }
+    else { p.standing -= CONFIG.ithaca.patiencePenalty; log(`🗡️ ${p.name} reveals early — forfeits standing −${CONFIG.ithaca.patiencePenalty} (→ ${p.standing}).`,'l-bad'); }
+  }
+  // Scene 2 — Bow (gate)
+  logBeat('Scene 2 — The Bow (gated by favor)');
+  const eligible = living.filter(p=>p.favor >= CONFIG.ithaca.bowFloor);
+  living.filter(p=>p.favor<CONFIG.ithaca.bowFloor).forEach(p=>log(`${p.name} cannot lift the bow — favor ${p.favor} is below the floor of ${CONFIG.ithaca.bowFloor}.`,'l-bad'));
+  eligible.sort((a,b)=> b.standing - a.standing);
+  let qualifiers = eligible.slice(0, CONFIG.ithaca.qualifyTop);
+  if(qualifiers.length===0){
+    const fallback = living.slice().sort((a,b)=>b.standing-a.standing)[0];
+    log(`No one clears the floor — the hall stays in ruin. ${fallback?fallback.name:'—'} stands highest by default.`,'l-sys');
+    qualifiers = fallback ? [fallback] : [];
+  } else if(qualifiers.length===1){
+    log(`Only ${qualifiers[0].name} clears the floor — they string the bow alone (the last of the faithful).`,'l-favor');
+  } else {
+    log(`The contest is live: ${qualifiers.map(p=>p.name+' (standing '+p.standing+')').join(' vs ')} qualify for the bow.`,'l-favor');
+  }
+  // Scene 3 — Reckoning
+  logBeat('Scene 3 — The Reckoning');
+  const pot = CONFIG.ithaca.suitorPot;
+  log(`The suitors carry a stolen pot of ${pot}🫒 — everything they drained from the house.`,'l-sys');
+  if(qualifiers.length>0){
+    const contrib = new Map();
+    let totalHigh=0;
+    for(const p of qualifiers){ const b=throwBone(); const c = b>=4 ? b : 0; contrib.set(p,c); totalHigh+=c; log(`${p.name} strikes 🎲${b} → contribution ${c}.`,'l-act'); await botPause(); }
+    if(totalHigh===0){
+      const share = Math.floor(pot/qualifiers.length);
+      qualifiers.forEach(p=>{ p.favor+=share; log(`${p.name} claims ${share}🫒 of the pot (even split — the fight was ugly).`,'l-favor'); });
+    } else {
+      let handed=0;
+      qualifiers.forEach((p,i)=>{ let share = (i===qualifiers.length-1) ? (pot-handed) : Math.round(pot * (contrib.get(p)/totalHigh)); share=Math.max(0,share); handed+=share; p.favor+=share; log(`${p.name} claims ${share}🫒 of the pot by their blows.`,'l-favor'); });
+    }
+    flavor("Then Penelope's test of the bed — a recognition that confirms who you truly are. (No score; the heart already knows.)");
+  } else {
+    log(`With no one to string the bow, the suitors are not thrown down. The house stays lost.`,'l-bad');
+  }
+  render();
+  finishGame();
+}
+
+/* ---------------------------------------------------------------- SAFETY / END --- */
+function deadEndCheck(){
+  // never allow a true dead-end: if all are dead, either auto-Charon the solvent, or end.
+  if(livingCount()>0) return false;
+  const solvent = deadPl().filter(p=>p.favor>=CONFIG.charonToll);
+  if(solvent.length>0){
+    solvent.forEach(p=>{ p.favor-=CONFIG.charonToll; p.status='alive'; p.satchel=0; log(`🌊 The tide carries ${p.name} back from the dead (Charon paid).`,'l-good'); });
+    render();
+    return false;
+  }
+  log(`☠️ The whole crew is dead with no favor left to return. The voyage ends here.`,'l-die');
+  finishGame(true);
+  return true;
+}
+
+function finishGame(allDead){
+  if(state.over) return;
+  state.over = true;
+  state.beatIndex = state.journey.length-1;
+  renderTrack(); renderPlayers();
+  const box = $('prompt');
+  const alive = livingPl();
+  let winners=[], top=-Infinity;
+  const pool = alive.length? alive : state.players;
+  pool.forEach(p=>{ if(p.favor>top){ top=p.favor; winners=[p]; } else if(p.favor===top){ winners.push(p); } });
+  logBeat('━━━━━━━━━━━━━━━━ THE VERDICT ━━━━━━━━━━━━━━━━');
+  if(allDead && alive.length===0){
+    log(`No one came home. Odysseus's crew all died — as they did in the poem.`,'l-die');
+  }
+  const board = state.players.slice().sort((a,b)=> b.favor-a.favor)
+    .map(p=>`${winners.includes(p)&&!allDead?'👑 ':'   '}${p.name} — 🫒 ${p.favor} · ${statusTok(p)}`).join('\n');
+  let html = `<div class="final"><h2>⚖️ Final reckoning</h2><pre class="mono">${board}</pre>`;
+  if(!allDead && winners.length){ html += `<div class="win">Most beloved of the gods: ${winners.map(w=>w.name).join(' & ')} 🏆</div>`; }
+  html += `<div class="small" style="margin-top:8px">Reload the page for a fresh voyage.${state.seed?' Same ?seed reproduces this game.':''}</div>`;
+  html += `<button class="primary" style="margin-top:10px" onclick="location.reload()">⟲ New voyage</button></div>`;
+  box.innerHTML = html;
+}
+
+/* ---------------------------------------------------------------- DEAL + RUN --- */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rint(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function dealJourney(){
+  const pool = shuffle(Object.values(EPISODES).slice());  // 4 episodes → 4 island slots
+  const islandDefs = [pool[0], pool[1], pool[2], pool[3]];
+  let isl=0;
+  const types = ['troy','island','island','hades','island','island','phaeacia','ithaca'];
+  state.journey = types.map(t=>{
+    if(t==='island'){ return { type:'island', revealed:false, episode: islandDefs[isl++] }; }
+    return { type:t };
+  });
+}
+
+async function setupTroy(){
+  logBeat('⚓ Troy — the sack');
+  flavor('Before the first crossing, take from the sack. Greed buys survival now; restraint buys favor — and favor buys second lives.');
+  await collectCommits(state.players, 'troy', {});
+  for(const p of state.players){
+    const t = p.commit;
+    p.satchel += t; p.favor += (7 - t);
+    log(`${p.name} takes ${t}🍖 from Troy and gains ${7-t}🫒 favor.`,'l-act');
+  }
+  render();
+}
+
+async function runGame(){
+  dealJourney();
+  render();
+  state.beatIndex = 0;
+  await setupTroy();
+  for(state.beatIndex=1; state.beatIndex<state.journey.length; state.beatIndex++){
+    if(state.over) return;
+    render();
+    const beat = state.journey[state.beatIndex];
+    // crossing precedes every beat after Troy
+    await runCrossing();
+    if(state.over) return;
+    if(deadEndCheck()) { if(state.over) return; }
+    switch(beat.type){
+      case 'island':   await runIsland(beat); break;
+      case 'hades':    await runHades(); break;
+      case 'phaeacia': await runPhaeacia(); break;
+      case 'ithaca':   await runIthaca(); return;
+    }
+    if(deadEndCheck()) return;
+  }
+  if(!state.over) finishGame();
+}
+
+/* everything is declared — now honor URL params / auto-start */
+initFromUrl();
+</script>
+</body>
+</html>
