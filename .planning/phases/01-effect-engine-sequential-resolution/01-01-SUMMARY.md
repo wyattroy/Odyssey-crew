@@ -166,6 +166,15 @@ None - no external service configuration required.
 - Plan 01-02 (Sequential Resolution) is next in this phase; it was not touched by this plan and its scope is unaffected.
 - Known project-level blocker (unrelated to this plan, tracked since project memory `odyssey-crew-playtest-balance`): several seeds (e.g. `demo`, `beta`) still end in total-crew-death under current `CONFIG` defaults — this plan deliberately did NOT touch payoff magnitudes' relative sizes (only their CONFIG-traceability), so the balance question remains open for the later balance/retune phase, per PROJECT.md's explicit "hand-tuned payoffs replace the defaults" plan.
 
+## Self-Check: PASSED
+
+- FOUND: index.html
+- FOUND: .planning/phases/01-effect-engine-sequential-resolution/01-01-SUMMARY.md
+- FOUND: a6412a4 (Task 1 commit)
+- FOUND: 10dceb6 (Task 2 commit)
+- FOUND: 4731e26 (Task 3 commit)
+- FOUND: 6e7a9d5 (SUMMARY commit)
+
 ---
 *Phase: 01-effect-engine-sequential-resolution*
 *Completed: 2026-07-25*

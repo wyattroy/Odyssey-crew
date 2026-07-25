@@ -38,10 +38,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The resolution-order rule is a fixed-turn-order seam documented in a code comment, swappable to a future scheme (favor-weighted / turn-chip) without touching resolution logic.
   5. A 0-human `?seed=` run still completes unattended to a winner, every beat payoff traces to the labelled CONFIG convention (no scattered magic numbers), and the game remains one self-contained `index.html` with no new dependency.
 
-**Plans**: 2 plans
+**Plans**: 1/2 plans executed
 **Wave 1**
 
-- [ ] 01-01-PLAN.md — Effect engine: beats data model + resolveEffect + narrate + validateBeats + labelled CONFIG convention, proven by converting Helios "The Meadow" (tracer) and Cyclops "The Wine" (stateful)
+- [x] 01-01-PLAN.md — Effect engine: beats data model + resolveEffect + narrate + validateBeats + labelled CONFIG convention, proven by converting Helios "The Meadow" (tracer) and Cyclops "The Wine" (stateful)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Effect Engine & Sequential Resolution | v1.1 | 0/2 | Not started | - |
+| 1. Effect Engine & Sequential Resolution | v1.1 | 1/2 | In Progress|  |
 | 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 0/TBD | Not started | - |
 | 3. Anchor Verb Retrofit & Balance Retune | v1.1 | 0/TBD | Not started | - |
 | 4. Interactive Board | v1.1 | 0/TBD | Not started | - |

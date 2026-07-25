@@ -6,6 +6,7 @@
 **Milestone goal:** Turn the rules-complete prototype into a *felt* game — every scene carries its story's moral through tailored Dare/Abide/Give beats and payoffs, and the whole voyage is played on a visual board instead of a text log.
 
 **Design principle to encode across all authored effects:**
+
 - **Dare** risks the resources/favor of *both you and the crew*, but the upside is high.
 - **Abide** risks nothing and the upside is low; abiding *alone* is often lethal (living requires daring), and the gods don't care if you die. Abiding is the *default* favor path (abiding Zeus's law).
 - **Give** carries no risk, is necessary to keep the crew alive, and the gods never notice (no favor change).
@@ -17,10 +18,10 @@
 
 ### Effect Engine (declarative effect + narration model)
 
-- [ ] **EFFECT-01**: Each island scene stage carries a declarative `beats` data structure mapping every verb (Dare/Abide/Give) × every roll face (1/3/4/6) to `{ delta, text }` — a tuned payoff plus a one-sentence story beat.
-- [ ] **EFFECT-02**: A single generic resolver consumes `beats` to apply effects and produce narration, replacing per-scene inline `reskin` delta-mutation + hand-written strings (extends the existing `LAND_TABLE`/`SEA_TABLE`/`reskin` pattern; no engine rewrite).
-- [ ] **EFFECT-03**: A coverage validator confirms every authored scene has a complete verb×face table (no missing or dead cells) and runs before/with authoring to prevent drift across scenes.
-- [ ] **EFFECT-04**: All numeric payoffs are traceable to a single labelled `CONFIG` convention (no magic numbers scattered through beats), preserving the project's retunability constraint.
+- [x] **EFFECT-01**: Each island scene stage carries a declarative `beats` data structure mapping every verb (Dare/Abide/Give) × every roll face (1/3/4/6) to `{ delta, text }` — a tuned payoff plus a one-sentence story beat.
+- [x] **EFFECT-02**: A single generic resolver consumes `beats` to apply effects and produce narration, replacing per-scene inline `reskin` delta-mutation + hand-written strings (extends the existing `LAND_TABLE`/`SEA_TABLE`/`reskin` pattern; no engine rewrite).
+- [x] **EFFECT-03**: A coverage validator confirms every authored scene has a complete verb×face table (no missing or dead cells) and runs before/with authoring to prevent drift across scenes.
+- [x] **EFFECT-04**: All numeric payoffs are traceable to a single labelled `CONFIG` convention (no magic numbers scattered through beats), preserving the project's retunability constraint.
 
 ### Resolution (sequential commit resolution against shared resources)
 
@@ -102,10 +103,10 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EFFECT-01 | Phase 1 | Pending |
-| EFFECT-02 | Phase 1 | Pending |
-| EFFECT-03 | Phase 1 | Pending |
-| EFFECT-04 | Phase 1 | Pending |
+| EFFECT-01 | Phase 1 | Complete |
+| EFFECT-02 | Phase 1 | Complete |
+| EFFECT-03 | Phase 1 | Complete |
+| EFFECT-04 | Phase 1 | Complete |
 | RESOLVE-01 | Phase 1 | Pending |
 | RESOLVE-02 | Phase 1 | Pending |
 | RESOLVE-03 | Phase 1 | Pending |
@@ -133,11 +134,13 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | BOARD-09 | Phase 4 | Pending |
 
 **Coverage:**
+
 - v1.1 requirements: 29 total
 - Mapped to phases: 29 ✓
 - Unmapped: 0 ✓
 
 **Phase distribution:**
+
 - Phase 1 (Effect Engine & Sequential Resolution): 7 — EFFECT-01..04, RESOLVE-01..03
 - Phase 2 (Themed Island Content & Favor-Law Reconciliation): 6 — CONTENT-01..06
 - Phase 3 (Anchor Verb Retrofit & Balance Retune): 7 — ANCHOR-01..04, BALANCE-01..03
