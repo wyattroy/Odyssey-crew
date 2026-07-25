@@ -181,7 +181,15 @@ const CONFIG = {
     greedy:   { troyLow:5, troyHigh:6, dareBias:0.72, boast:true,  revealFavor:4, protectsHold:false },
     balanced: { troyLow:3, troyHigh:4, dareBias:0.42, boast:false, revealFavor:99, protectsHold:false },
     pious:    { troyLow:1, troyHigh:2, dareBias:0.16, boast:false, revealFavor:99, protectsHold:true },
-  }
+  },
+  // CONFIG.fx — the canonical home for small shared payoff magnitudes referenced by
+  // beats d:{...} cells (EFFECT-04). Scene-specific numbers stay in their own
+  // CONFIG.<episode> subobject; only cross-scene/shared magnitudes live here.
+  fx: {
+    tiny: 1,      // smallest nonzero payoff step (e.g. a single ration or favor point)
+    small: 2,     // a modest payoff step
+    penalty: -1,  // smallest nonzero cost/penalty step
+  },
 };
 
 /* ---------------------------------------------------------------- BONE TABLES --- */
@@ -684,6 +692,41 @@ function pickLowest(players, n){
   return losers;
 }
 
+/* ---------------------------------------------------------------- EFFECT ENGINE --- */
+// resolveEffect() is the single generic resolver for a scene's Dare/Abide/Give reveal:
+// it prefers the declarative `scene.beats[verb][bone]` cell (EFFECT-01/02), falls back
+// to a scene's custom `reskin[verb]` closure (existing per-scene override — still logs
+// its own line, so resolveEffect must not narrate it a second time), and finally falls
+// back to the generic LAND_TABLE/SEA_TABLE — so an unconverted scene always keeps
+// working exactly as before. The `|| {}` default is preserved so a sparse/undeclared
+// cell never throws.
+function resolveEffect(p, scene, verb, bone, env){
+  if(scene && scene.beats && scene.beats[verb] && scene.beats[verb][bone]){
+    const cell = scene.beats[verb][bone];
+    const applied = applyDeltas(p, cell.d || {});
+    const tell = typeof cell.tell === 'function' ? cell.tell(p) : '';
+    return { applied, tell, cls: applied ? 'l-act' : 'l-sys', logged:false };
+  }
+  if(scene && scene.reskin && scene.reskin[verb]){
+    const applied = scene.reskin[verb](p, bone);   // existing closure: mutates + logs + returns narration
+    return { applied, tell:'', cls:null, logged:true };
+  }
+  const table = env==='sea' ? SEA_TABLE : LAND_TABLE;
+  const d = (table[verb] && table[verb][bone]) || {};
+  const applied = applyDeltas(p, d);
+  return { applied, tell:'', cls:null, logged:false };
+}
+
+// narrate() is the single place a ship's-log line is assembled from a resolved effect —
+// name, verb word, die face, the mechanical fragment, then the story `tell` sentence.
+// Mirrors the format the old generic table-fallback branch always logged with ('l-act').
+// This is the one place the sentence is built so the same text can later drive the board.
+function narrate(p, verb, env, bone, tell, applied){
+  const base = `${p.name} ${verbWord(verb,env)} 🎲${bone} → ${applied||'nothing stirs'}.`;
+  const html = tell ? `${base} ${tell}` : base;
+  return { html, cls:'l-act' };
+}
+
 /* ---------------------------------------------------------------- ACT PHASE --- */
 async function actPhase(env, scene, sceneIndex){
   const actors = actingPl();
@@ -700,19 +743,14 @@ async function actPhase(env, scene, sceneIndex){
 
   // throw all bones, then reveal one at a time
   actors.forEach(p=>{ p.lastBone = throwBone(); });
-  const table = env==='sea' ? SEA_TABLE : LAND_TABLE;
   for(const p of actors){
     p._boneShow = p.lastBone;
-    let delta;
-    if(scene && scene.reskin && scene.reskin[p.commit]){
-      delta = scene.reskin[p.commit](p, p.lastBone);        // custom: returns narration
-    } else {
-      const d = table[p.commit][p.lastBone] || {};
-      const applied = applyDeltas(p, d);
-      delta = applied || 'no change';
-      log(`${p.name} ${verbWord(p.commit,env)} 🎲${p.lastBone} → ${applied||'nothing stirs'}.`,'l-act');
+    const r = resolveEffect(p, scene, p.commit, p.lastBone, env);
+    if(!r.logged){
+      const n = narrate(p, p.commit, env, p.lastBone, r.tell, r.applied);
+      log(n.html, n.cls);
     }
-    p._delta = delta;
+    p._delta = r.applied || 'no change';
     renderPlayers();
     await botPause();
   }
@@ -746,7 +784,42 @@ const EPISODES = {
     scenes:[
       { name:'The Meadow', hook:'The herd gleams. Odysseus warns: touch nothing.',
         verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — restraint (the pious road)'}, give:{label:'Give — feed the hold'}},
-        reskin:{ dare: mkHeliosDare() } },
+        // Tracer conversion (EFFECT-01/02): behavior-preserving — dare mirrors the old
+        // mkHeliosDare()/LAND_TABLE.dare deltas exactly, abide/give mirror LAND_TABLE's
+        // fallthrough. beats is checked before reskin/table in resolveEffect, so this
+        // scene now resolves entirely through the beats path.
+        beats: {
+          dare: {
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.penalty, favor:CONFIG.fx.penalty, world:CONFIG.fx.small},
+                tell:(p)=>`Seen by the Sun — the herd bellows in alarm, and Helios's wrath rises.` },
+            3:{ d:{you:CONFIG.fx.tiny},
+                tell:(p)=>`A quiet cut of beef, taken quickly and low.` },
+            4:{ d:{you:CONFIG.fx.small},
+                tell:(p)=>`A clean kill — no one stirs, but the herd is one fewer.` },
+            6:{ d:{you:CONFIG.fx.small, crew:CONFIG.fx.small},
+                tell:(p)=>`A feast for the whole crew, carved from stolen meat.` },
+          },
+          abide: {
+            1:{ d:{},
+                tell:(p)=>`The vow holds, and the belly stays empty.` },
+            3:{ d:{you:CONFIG.fx.tiny},
+                tell:(p)=>`Restraint pays a small, private due.` },
+            4:{ d:{you:CONFIG.fx.tiny, crew:CONFIG.fx.tiny},
+                tell:(p)=>`Patience feeds the sailor and steadies the hold.` },
+            6:{ d:{you:CONFIG.fx.tiny, crew:CONFIG.fx.tiny, favor:CONFIG.fx.tiny},
+                tell:(p)=>`Unshaken faith draws a nod from the gods themselves.` },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty},
+                tell:(p)=>`A ration goes into the hold, and the giver goes without.` },
+            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`Sharing thins one satchel to thicken the common store.` },
+            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`The hold grows a little heavier for the sacrifice.` },
+            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`Generosity is its own quiet reward.` },
+          },
+        } },
       { name:'The Hunger', hook:'Days pass. The rod brings nothing. Bellies growl against the vow.',
         verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — hold out'}, give:{label:'Give — feed the hold'}},
         reskin:{ dare: mkHeliosDare() } },
