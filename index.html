@@ -190,6 +190,15 @@ const CONFIG = {
     small: 2,     // a modest payoff step
     penalty: -1,  // smallest nonzero cost/penalty step
   },
+  // CONFIG.log — the single home for ship's-log line classes the effect resolver emits
+  // (WR-01). Nothing in resolveEffect()/narrate() hardcodes a class literal: change a
+  // colour here once and every resolved line follows, or override a single outcome by
+  // giving that beats cell its own `cls`. Keep these keys in sync with the .l-* CSS.
+  log: {
+    act:    'l-act',   // a committed action resolved and changed state
+    none:   'l-sys',   // resolved, but nothing stirred
+    denied: 'l-bad',   // committed action denied (e.g. the hold was empty)
+  },
 };
 
 /* ---------------------------------------------------------------- BONE TABLES --- */
@@ -730,12 +739,12 @@ function resolveEffect(p, scene, verb, bone, env){
   if(scene && scene.beats && scene.beats[verb] && scene.beats[verb][bone]){
     const cell = scene.beats[verb][bone];
     if(!canAffordDraw(cell.d)){
-      return { applied:'denied — hold empty', tell: HOLD_DENIED_TELL, cls:'l-bad', logged:false, denied:true };
+      return { applied:'denied — hold empty', tell: HOLD_DENIED_TELL, cls: CONFIG.log.denied, logged:false, denied:true };
     }
     if(typeof cell.fx === 'function') cell.fx(p, bone);
     const applied = applyDeltas(p, cell.d || {});
     const tell = typeof cell.tell === 'function' ? cell.tell(p) : '';
-    return { applied, tell, cls: applied ? 'l-act' : 'l-sys', logged:false };
+    return { applied, tell, cls: cell.cls || (applied ? CONFIG.log.act : CONFIG.log.none), logged:false };
   }
   if(scene && scene.reskin && scene.reskin[verb]){
     const applied = scene.reskin[verb](p, bone);   // existing closure: mutates + logs + returns narration
@@ -744,7 +753,7 @@ function resolveEffect(p, scene, verb, bone, env){
   const table = env==='sea' ? SEA_TABLE : LAND_TABLE;
   const d = (table[verb] && table[verb][bone]) || {};
   if(!canAffordDraw(d)){
-    return { applied:'denied — hold empty', tell: HOLD_DENIED_TELL, cls:'l-bad', logged:false, denied:true };
+    return { applied:'denied — hold empty', tell: HOLD_DENIED_TELL, cls: CONFIG.log.denied, logged:false, denied:true };
   }
   const applied = applyDeltas(p, d);
   return { applied, tell:'', cls:null, logged:false };
@@ -757,7 +766,7 @@ function resolveEffect(p, scene, verb, bone, env){
 function narrate(p, verb, env, bone, tell, applied){
   const base = `${p.name} ${verbWord(verb,env)} 🎲${bone} → ${applied||'nothing stirs'}.`;
   const html = tell ? `${base} ${tell}` : base;
-  return { html, cls:'l-act' };
+  return { html, cls: CONFIG.log.act };
 }
 
 /* ---------------------------------------------------------------- ACT PHASE --- */
@@ -1305,6 +1314,10 @@ function finishGame(allDead){
   logBeat('━━━━━━━━━━━━━━━━ THE VERDICT ━━━━━━━━━━━━━━━━');
   if(allDead && alive.length===0){
     log(`No one came home. Odysseus's crew all died — as they did in the poem.`,'l-die');
+  } else if(winners.length){
+    // Symmetry with the all-dead line: the log always closes THE VERDICT with a
+    // verdict sentence, not just the Final-reckoning panel (endgame polish).
+    log(`${winners.map(w=>w.name).join(' & ')} come${winners.length>1?'':'s'} home most beloved of the gods 🏆 — 🫒 ${top}.`, CONFIG.log.act);
   }
   const board = state.players.slice().sort((a,b)=> b.favor-a.favor)
     .map(p=>`${winners.includes(p)&&!allDead?'👑 ':'   '}${p.name} — 🫒 ${p.favor} · ${statusTok(p)}`).join('\n');
