@@ -25,9 +25,9 @@
 
 ### Resolution (sequential commit resolution against shared resources)
 
-- [ ] **RESOLVE-01**: Blind commits stay simultaneous, but on reveal they resolve *sequentially* against shared/commons resources (the hold) — replacing the current simultaneous-feasibility check with turn-ordered resolution, so a shared-resource shortfall is decided by who acts first.
-- [ ] **RESOLVE-02**: When a player's committed action is no longer affordable at their point in the resolution order (e.g. the last hold ration was consumed by an earlier player's Dare), that action is denied and the player's turn is skipped — never partially applied — with narration explaining the shortfall.
-- [ ] **RESOLVE-03**: Resolution order is defined by fixed turn order for v1.1; the ordering is an isolated, documented seam (code comment) so a future scheme (favor-weighted order, or a passed "turn chip") can replace it without touching resolution logic.
+- [x] **RESOLVE-01**: Blind commits stay simultaneous, but on reveal they resolve *sequentially* against shared/commons resources (the hold) — replacing the current simultaneous-feasibility check with turn-ordered resolution, so a shared-resource shortfall is decided by who acts first.
+- [x] **RESOLVE-02**: When a player's committed action is no longer affordable at their point in the resolution order (e.g. the last hold ration was consumed by an earlier player's Dare), that action is denied and the player's turn is skipped — never partially applied — with narration explaining the shortfall.
+- [x] **RESOLVE-03**: Resolution order is defined by fixed turn order for v1.1; the ordering is an isolated, documented seam (code comment) so a future scheme (favor-weighted order, or a passed "turn chip") can replace it without touching resolution logic.
 
 ### Island Content (thematic authoring — 4 islands × 3 stages)
 
@@ -107,9 +107,9 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | EFFECT-02 | Phase 1 | Complete |
 | EFFECT-03 | Phase 1 | Complete |
 | EFFECT-04 | Phase 1 | Complete |
-| RESOLVE-01 | Phase 1 | Pending |
-| RESOLVE-02 | Phase 1 | Pending |
-| RESOLVE-03 | Phase 1 | Pending |
+| RESOLVE-01 | Phase 1 | Complete |
+| RESOLVE-02 | Phase 1 | Complete |
+| RESOLVE-03 | Phase 1 | Complete |
 | CONTENT-01 | Phase 2 | Pending |
 | CONTENT-02 | Phase 2 | Pending |
 | CONTENT-03 | Phase 2 | Pending |

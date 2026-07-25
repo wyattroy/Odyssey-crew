@@ -4,16 +4,16 @@ milestone: v1.1
 milestone_name: Themed Episodes & Interactive Board
 current_phase: 01
 current_phase_name: effect-engine-sequential-resolution
-status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-07-25T21:02:00.031Z"
+status: verifying
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-07-25T21:13:54.557Z"
 last_activity: 2026-07-25
 last_activity_desc: Phase 01 execution started
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 
 Phase: 01 (effect-engine-sequential-resolution) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-25 — Phase 01 execution started
 
-Progress: [█████░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Progress: [█████░░░░░] 50%
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 01 P01 | 20min | 3 tasks | 1 files |
+| Phase 01 P02 | 12min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,9 @@ Recent decisions affecting current work:
 - Roadmap: Anchor retrofit (Hades/Phaeacia/Ithaca) is scoped as an engine-extension task, distinct from island content authoring, and must not regress validated v1.0 mechanics.
 - [Phase ?]: Beats engine (resolveEffect/narrate/validateBeats/CONFIG.fx) landed and proven on Helios Meadow (tracer) + Cyclops Wine (stateful, via fx escape hatch); resolveEffect falls back to reskin/LAND_TABLE/SEA_TABLE for all unconverted scenes
 - [Phase ?]: Verified via a scratchpad-only headless Node harness (no browser available); confirms deterministic seeded parity across 32+ seeds and the fail-loud validateBeats path, without adding any dependency to index.html
+- [Phase ?]: resolutionOrder(actors) — single fixed-turn-order seam (ascending seat id, no rnd()) governing both eatPhase and Act reveal-loop resolution against the shared hold; swap only this function for a future favor-weighted/turn-chip scheme
+- [Phase ?]: canAffordDraw(d) — shared deny-not-clamp feasibility gate; extended beyond resolveEffect's beats/table paths into mkHeliosDare and Cyclops 'The Stake' give-wine (the only other closures that draw directly from the hold) so the never-partially-applied guarantee (RESOLVE-02) holds uniformly
+- [Phase ?]: pickLowest and the eat-phase bone lot-cast fully retired; hold shortfall now resolves by fixed turn order, not chance
 
 ### Pending Todos
 
@@ -95,6 +99,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-25T21:02:00.021Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-07-25T21:13:54.546Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
