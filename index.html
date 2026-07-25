@@ -206,6 +206,13 @@ const SEA_TABLE = {
 };
 
 /* ---------------------------------------------------------------- RNG SEAM --- */
+// DETERMINISM INVARIANT (Pitfall 5, verified after RESOLVE-01/02/03): every rnd()-family
+// call (rnd/rint/pick/throwBone, and any bag draw) must happen synchronously inside a
+// reducer/phase function (e.g. eatPhase, actPhase, botDecide, dealJourney), in a fixed
+// call order driven only by game state — never inside a click handler, a setTimeout/
+// sleep callback, or a requestAnimationFrame/render callback. That's what makes the
+// same `?seed=` replay byte-identical: resolutionOrder() itself is deterministic (no
+// rnd() call) and only reorders WHEN existing rnd() draws are consumed, never adds one.
 function makeRng(seedStr){
   if(!seedStr){ return Math.random; }
   let h = 1779033703 ^ seedStr.length;
