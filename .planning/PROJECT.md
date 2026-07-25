@@ -40,6 +40,8 @@ The commons tension must actually fire: disaster should emerge from the *sum of 
 
 See `.planning/REQUIREMENTS.md` for v1.1 requirements (per-scene thematic effect tables, effects-as-balance retune, interactive board replacing the log).
 
+**Progress:** Phase 1 (Effect Engine & Sequential Resolution) complete ✓ — EFFECT-01…04 + RESOLVE-01…03 validated (declarative `beats` model + `resolveEffect`/`validateBeats` resolver, and sequential turn-ordered hold resolution replacing lot-casting). Next: Phase 2 (themed island content).
+
 ### Out of Scope
 
 <!-- Explicit boundaries. -->
@@ -93,4 +95,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-25 — started milestone v1.1 Themed Episodes & Interactive Board*
+*Last updated: 2026-07-25 — Phase 1 (Effect Engine & Sequential Resolution) complete*

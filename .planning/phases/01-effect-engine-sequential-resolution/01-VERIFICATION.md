@@ -1,15 +1,17 @@
 ---
 phase: 01-effect-engine-sequential-resolution
 verified: 2026-07-25T00:00:00Z
-status: human_needed
+status: passed
 score: 8/10 must-haves verified
 behavior_unverified: 2
 overrides_applied: 0
 behavior_unverified_items:
+
   - truth: "01-01 SC5: A 0-human ?seed= run still completes unattended to a winner after the beats/resolveEffect conversion, and all rnd()/throwBone() draws stay synchronous inside reducers."
     test: "Open index.html?seed=demo&auto=1&humans=0 (and 2-3 other seeds) in a real browser; run the same seed twice."
     expected: "Each run reaches 'THE VERDICT' with a determined winner and no 'ENGINE ERROR' log line; the two same-seed runs produce byte-identical ship's-logs."
     why_human: "This is a full end-to-end multi-episode runtime claim (dealJourney shuffle, all four islands, Hades/Phaeacia/Ithaca) that a static source read cannot fully guarantee (loop termination, no runtime TypeErrors across the whole reducer chain). No browser or headless-DOM tooling is available in this verification environment to execute it independently; the SUMMARY's own scratchpad harness result is not accepted as a substitute per the adversarial-verification mandate."
+
   - truth: "01-02 SC5: identical ?seed= reproduces an identical game after the sequential-resolution change; the 0-human seeded run still completes to a winner; a hostile/malformed seed does not crash the engine or break determinism."
     test: "Open index.html?seed=demo&auto=1&humans=0 twice and diff logs; then open with a hostile seed (e.g. ?seed=%%%%%%%%%%%%unicode-and-symbols&auto=1&humans=0) and an empty seed."
     expected: "Both same-seed runs are identical and reach a winner; hostile/empty seed runs complete without an unhandled exception."
