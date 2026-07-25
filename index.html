@@ -627,6 +627,27 @@ function botAct(p, ctx, T){
   return canGive && rnd()<0.3 ? 'give' : 'abide';
 }
 
+/* ---------------------------------------------------------------- RESOLUTION ORDER SEAM --- */
+// v1.1 RESOLUTION-ORDER SEAM (RESOLVE-03): blind commits (collectCommits) stay
+// simultaneous — nothing upstream of this changes. But once a reveal draws on the
+// shared hold (a commons), someone has to be resolved first. This function is the
+// SINGLE, ISOLATED seam that decides who: v1.1 uses fixed turn order (ascending seat
+// id). To move to a favor-weighted order or a passed turn-chip scheme later, swap ONLY
+// this function — no other resolution logic (eatPhase's hold loop, the Act reveal loop,
+// canAffordDraw) needs to change. Deterministic: this function must never call rnd().
+function resolutionOrder(actors){
+  return actors.slice().sort((a,b)=>a.id-b.id);
+}
+
+// canAffordDraw(d): the single "deny, never partially apply" feasibility gate shared by
+// eat and act resolution (RESOLVE-02). A delta whose hold draw would overdraw the
+// shared hold is wholly unaffordable — callers must skip applyDeltas (and any fx)
+// entirely rather than let applyDeltas's clamp silently shrink a committed draw to a
+// partial one.
+function canAffordDraw(d){
+  return !(d && d.crew < 0 && state.hold + d.crew < 0);
+}
+
 /* ---------------------------------------------------------------- EAT PHASE --- */
 async function eatPhase(){
   const eaters = livingPl();
@@ -643,26 +664,21 @@ async function eatPhase(){
     if(p.satchel>0){ p.satchel--; feed(p); log(`${p.name} eats from their own satchel.`,'l-eat'); }
     else { log(`${p.name} reached into an empty satchel — no meal.`,'l-eat'); miss(p); }
   }
-  // hold reachers
-  const R = holdReachers.length, H = state.hold;
-  if(R>0){
-    log(`${R} sailor${R>1?'s':''} reach for the hold (🛢️ ${H}).`,'l-eat');
-    if(R<=H){
-      holdReachers.forEach(p=>{ state.hold--; feed(p); });
-      log(`The hold feeds them all.`,'l-eat');
-    } else {
-      // all reachers cast lots; lowest (R-H) miss
-      const losersNeeded = R - H;
-      holdReachers.forEach(p=>{ p.lastBone=throwBone(); p._boneShow=p.lastBone; });
-      renderPlayers();
-      const losers = pickLowest(holdReachers, losersNeeded);
-      const winners = holdReachers.filter(p=>!losers.includes(p));
-      // hold feeds H of them (winners), then empties
-      winners.forEach(p=>feed(p));
-      state.hold = Math.max(0, state.hold - winners.length);
-      log(`The hold is short — lots are cast: ${holdReachers.map(p=>`${p.name}🎲${p.lastBone}`).join(', ')}.`,'l-bad');
-      losers.forEach(p=>{ log(`${p.name} drew low and misses the meal.`,'l-bad'); miss(p); });
-      state.hold = 0;
+  // hold reachers: resolved SEQUENTIALLY in fixed turn order against the shared hold
+  // (RESOLVE-01/02) — one ration is spent at a time via resolutionOrder(); a reacher
+  // who finds the hold already dry is denied and skipped outright — never partially
+  // fed, and never decided by a bone lot-cast (the old simultaneous-feasibility check
+  // this replaces).
+  if(holdReachers.length>0){
+    log(`${holdReachers.length} sailor${holdReachers.length>1?'s':''} reach for the hold (🛢️ ${state.hold}).`,'l-eat');
+    for(const p of resolutionOrder(holdReachers)){
+      if(state.hold>0){
+        state.hold--; feed(p);
+        log(`${p.name} draws from the hold (🛢️ ${state.hold} left).`,'l-eat');
+      } else {
+        log(`${p.name} reaches for the hold, but it has already run dry — denied, meal missed.`,'l-bad');
+        miss(p);
+      }
       await botPause();
     }
   }
@@ -672,24 +688,6 @@ function feed(p){ if(p.status==='starving'){ p.status='alive'; log(`${p.name} ea
 function miss(p){
   if(p.status==='starving'){ p.status='dead'; p.satchel=0; p.lotusStruck=false; log(`💀 ${p.name} misses a second meal and dies. Their satchel spills to the sea; their soul goes to the shore of the dead.`,'l-die'); }
   else if(p.status==='alive'){ p.status='starving'; log(`${p.name} is now starving — too weak to act next turn.`,'l-bad'); }
-}
-function pickLowest(players, n){
-  // choose n lowest by bone; resolve boundary ties by re-throw among tied
-  let pool = players.slice();
-  const losers = [];
-  while(losers.length < n){
-    const min = Math.min(...pool.map(p=>p.lastBone));
-    let tied = pool.filter(p=>p.lastBone===min);
-    const need = n - losers.length;
-    if(tied.length <= need){ tied.forEach(p=>losers.push(p)); pool = pool.filter(p=>!tied.includes(p)); }
-    else {
-      // re-throw among tied until we can separate `need` losers
-      tied.forEach(p=>{ p.lastBone=throwBone(); p._boneShow=p.lastBone; });
-      log(`Tie at the barrel — ${tied.map(p=>p.name).join(', ')} re-cast: ${tied.map(p=>`${p.name}🎲${p.lastBone}`).join(', ')}.`,'l-bad');
-      // loop continues; if still tied it re-throws again
-    }
-  }
-  return losers;
 }
 
 /* ---------------------------------------------------------------- EFFECT ENGINE --- */
@@ -706,9 +704,17 @@ function pickLowest(players, n){
 // so tell can narrate the post-mutation state, and narration authoring always has
 // exactly one home (the cell's own `tell`) whether or not the cell needs custom logic.
 // Escape-hatch cells must never hand-write their own log() line.
+// Every path below that would call applyDeltas first runs it through canAffordDraw() —
+// the shared "deny, never partially apply" feasibility gate (RESOLVE-02): a committed
+// cell whose net hold draw would overdraw the shared hold is denied as a whole (fx and
+// applyDeltas both skipped), never silently clamped to a partial amount.
+const HOLD_DENIED_TELL = `The hold has nothing left to give — the move fails for want of it.`;
 function resolveEffect(p, scene, verb, bone, env){
   if(scene && scene.beats && scene.beats[verb] && scene.beats[verb][bone]){
     const cell = scene.beats[verb][bone];
+    if(!canAffordDraw(cell.d)){
+      return { applied:'denied — hold empty', tell: HOLD_DENIED_TELL, cls:'l-bad', logged:false, denied:true };
+    }
     if(typeof cell.fx === 'function') cell.fx(p, bone);
     const applied = applyDeltas(p, cell.d || {});
     const tell = typeof cell.tell === 'function' ? cell.tell(p) : '';
@@ -720,6 +726,9 @@ function resolveEffect(p, scene, verb, bone, env){
   }
   const table = env==='sea' ? SEA_TABLE : LAND_TABLE;
   const d = (table[verb] && table[verb][bone]) || {};
+  if(!canAffordDraw(d)){
+    return { applied:'denied — hold empty', tell: HOLD_DENIED_TELL, cls:'l-bad', logged:false, denied:true };
+  }
   const applied = applyDeltas(p, d);
   return { applied, tell:'', cls:null, logged:false };
 }
@@ -748,14 +757,17 @@ async function actPhase(env, scene, sceneIndex){
   await collectCommits(actors, 'act', {env, scene, sceneIndex});
   actors.forEach(p=>p._committing=false); renderPlayers();
 
-  // throw all bones, then reveal one at a time
+  // throw all bones (blind, simultaneous — everyone throws together), then reveal one
+  // at a time in resolutionOrder() so a hold-drawing move is checked against whatever
+  // an earlier-in-order player already spent from the shared hold this reveal
+  // (RESOLVE-02/03: the same ordering seam that governs eatPhase's hold resolution).
   actors.forEach(p=>{ p.lastBone = throwBone(); });
-  for(const p of actors){
+  for(const p of resolutionOrder(actors)){
     p._boneShow = p.lastBone;
     const r = resolveEffect(p, scene, p.commit, p.lastBone, env);
     if(!r.logged){
       const n = narrate(p, p.commit, env, p.lastBone, r.tell, r.applied);
-      log(n.html, n.cls);
+      log(n.html, r.denied ? 'l-bad' : n.cls);
     }
     p._delta = r.applied || 'no change';
     renderPlayers();
@@ -777,6 +789,12 @@ function verbWord(v, env){
 function mkHeliosDare(){
   return (p,b)=>{
     const d = Object.assign({}, LAND_TABLE.dare[b]);
+    if(!canAffordDraw(d)){
+      // RESOLVE-02: the hold portion of this cell can't be covered — deny the whole
+      // cell (no you/favor/world delta either), never a partial slaughter.
+      log(`${p.name} moves to slaughter a cow 🎲${b}, but the hold has nothing left to give — denied.`,'l-bad');
+      return 'denied — hold empty';
+    }
     let extra='';
     if(b===1){ d.world = (d.world||0)+1; extra=' — <b>seen by the Sun!</b>'; }
     const s = applyDeltas(p,d);
@@ -888,7 +906,10 @@ const EPISODES = {
       { name:'The Stake', hook:'With the giant snoring drunk, the crew heaves the glowing stake.',
         verbs:{dare:{label:'Dare — drive the stake home'}, abide:{label:'Abide — brace the stake'}, give:{label:'Give — pour more wine'}},
         reskin:{
-          give:(p,b)=>{ if(state.hold>0)state.hold--; state.ep.drunk++; log(`${p.name} keeps him under with more wine (drunk ${state.ep.drunk}).`,'l-sys'); return 'drunk +1'; },
+          give:(p,b)=>{
+            if(!canAffordDraw({crew:-1})){ log(`${p.name} reaches for more wine, but the hold is empty — denied, nothing to pour.`,'l-bad'); return 'denied — hold empty'; }
+            state.hold--; state.ep.drunk++; log(`${p.name} keeps him under with more wine (drunk ${state.ep.drunk}).`,'l-sys'); return 'drunk +1';
+          },
           abide:(p,b)=>{ log(`${p.name} braces the stake 🎲${b}.`,'l-sys'); return 'braced'; },
           dare:(p,b)=>{ log(`${p.name} drives the stake 🎲${b}.`,'l-act'); return `bone ${b}`; },
         },
