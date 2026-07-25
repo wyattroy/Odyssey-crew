@@ -700,9 +700,16 @@ function pickLowest(players, n){
 // back to the generic LAND_TABLE/SEA_TABLE — so an unconverted scene always keeps
 // working exactly as before. The `|| {}` default is preserved so a sparse/undeclared
 // cell never throws.
+// A beats cell may carry an optional `fx:(p,bone)=>void` escape hatch for genuine extra
+// state mutation a flat `d` can't express (e.g. a persistent per-episode counter). fx
+// runs first, then `d` is applied via the unchanged applyDeltas, then `tell` is read —
+// so tell can narrate the post-mutation state, and narration authoring always has
+// exactly one home (the cell's own `tell`) whether or not the cell needs custom logic.
+// Escape-hatch cells must never hand-write their own log() line.
 function resolveEffect(p, scene, verb, bone, env){
   if(scene && scene.beats && scene.beats[verb] && scene.beats[verb][bone]){
     const cell = scene.beats[verb][bone];
+    if(typeof cell.fx === 'function') cell.fx(p, bone);
     const applied = applyDeltas(p, cell.d || {});
     const tell = typeof cell.tell === 'function' ? cell.tell(p) : '';
     return { applied, tell, cls: applied ? 'l-act' : 'l-sys', logged:false };
@@ -847,10 +854,34 @@ const EPISODES = {
     scenes:[
       { name:'The Wine', hook:'The giant sprawls. Odysseus offers a skin of dark wine.',
         verbs:{dare:{label:'Dare — attack him sober (needs a 6)'}, abide:{label:'Abide — cower unseen'}, give:{label:'Give — pour wine (make him drunk)'}},
-        reskin:{
-          give:(p,b)=>{ if(state.hold>0)state.hold--; state.ep.drunk++; log(`${p.name} pours wine 🍷 🎲${b} → Polyphemus is drunker (drunk ${state.ep.drunk}).`,'l-act'); return `drunk +1`; },
-          abide:(p,b)=>{ log(`${p.name} cowers in the shadows 🎲${b}.`,'l-sys'); return 'safe'; },
-          dare:(p,b)=>{ if(b===6){ state.ep.progress++; log(`${p.name} strikes sober and lands a blow! 🎲6 → escape ${state.ep.progress}/${state.episode.need}.`,'l-good'); return 'progress +1'; } const s=applyDeltas(p,{you:-1}); log(`${p.name} attacks sober 🎲${b} — folly. ${s}`,'l-bad'); return s; },
+        // Stateful-scene conversion (EFFECT-04 escape hatch): give/dare-6 use the `fx`
+        // hatch to mutate state.ep.drunk/progress — genuine extra state a flat `d`
+        // can't express — while narration (`tell`) and any expressible delta (`d`)
+        // still live in the same cell. Behavior-preserving vs. the old reskin closures.
+        beats: {
+          give: {
+            1:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+            3:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+            4:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+            6:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+          },
+          abide: {
+            1:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
+            3:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
+            4:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
+            6:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
+          },
+          dare: {
+            1:{ d:{you:CONFIG.fx.penalty}, tell:(p)=>`A blind lunge at a wide-awake monster — folly, and it costs a ration.` },
+            3:{ d:{you:CONFIG.fx.penalty}, tell:(p)=>`A blind lunge at a wide-awake monster — folly, and it costs a ration.` },
+            4:{ d:{you:CONFIG.fx.penalty}, tell:(p)=>`A blind lunge at a wide-awake monster — folly, and it costs a ration.` },
+            6:{ d:{}, fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`A single sober strike lands true — Polyphemus reels, blinded a little more (escape ${state.ep.progress}/${state.episode.need}).` },
+          },
         },
         collectiveCheck(){ polyphemusHunger(state.ep.drunk>state.ep._drunkBefore || state.ep.progress>state.ep._progBefore); }
       },
