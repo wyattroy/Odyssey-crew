@@ -8,31 +8,37 @@ A 4-player tabletop game based on Homer's *Odyssey*, playable digitally and phys
 
 The commons tension must actually fire: disaster should emerge from the *sum of private, individually-reasonable choices* — no coordination, no visible villain — while cooperation stays optimal for *winning* (favor) and defection stays optimal only for *bare survival*. If the prototype doesn't make that tension playable and felt, nothing else matters.
 
+## Current Milestone: v1.1 Themed Episodes & Interactive Board
+
+**Goal:** Turn the rules-complete prototype into a *felt* game — every scene carries its story's moral through tailored Dare/Abide/Give beats and payoffs, and the whole voyage is played on a visual board instead of a text log.
+
+**Target features:**
+- Per-scene thematic effect tables: for every stage of every episode (4 islands + Hades/Phaeacia/Ithaca), each verb × each roll (1/3/4/6) gets a one-sentence story beat + a payoff tuned to that stage's moral.
+- Encoded design principle: Dare risks self and crew for high upside; Abide is riskless, low-upside, often lethal alone, and the *only* favor path (Zeus's law); Give is riskless, sustains the crew, never moves favor. Pure-abide strands/starves you.
+- Effects-as-balance: these hand-tuned per-stage numbers replace the default `[tune]` constants as the intended economy — the death-spiral goes away (hand-tuned, not sim-tuned this pass).
+- Interactive game board (replaces the raw narration log): boat crossing the sea, the actual blue/white marbles visibly draining from the crossing bag, dice showing the live roll, clickable Dare/Abide/Give, narration surfaced in the board.
+
 ## Requirements
 
 ### Validated
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+**v1.0 prototype (shipped in `index.html`):**
+- [x] Single self-contained `index.html` — all HTML/CSS/JS inline, vanilla JS, no build/network/storage, runs by double-click offline
+- [x] Full voyage end-to-end: Troy → 4 dealt islands → Hades → Phaeacia → Ithaca, no dead-end states
+- [x] Eat blind-commit with hold shortfall → lot-casting → starvation (two-strike) → death; death economy (Charon toll, Orpheus rescue)
+- [x] Favor only moves via the gods (Abide-6 grants, Dare-1 removes, Give never)
+- [x] Crossings: marble bag with rising land odds, variable length, always terminate; world-anger salts the bag
+- [x] Four worked episodes (Helios, Cyclops, Sirens, Lotus) + fixed anchors (Hades, Phaeacia, Ithaca finale)
+- [x] 1–4 humans + bots via `botDecide`; three temperaments (greedy / balanced / pious); blind-commit masking + director mode
+- [x] `?seed=` reproducibility; 0-human seeded game runs unattended to a winner; verbose narration log
 
 ### Active
 
-<!-- Current milestone: first playable HTML prototype. Source of truth is MDs/create-odyssey-crew.md §9 acceptance checklist. -->
+<!-- Current milestone: v1.1 Themed Episodes & Interactive Board. Detailed, scoped requirements with REQ-IDs live in .planning/REQUIREMENTS.md. -->
 
-- [ ] Single self-contained `index.html` — all HTML/CSS/JS inline, vanilla JS, no build step, no network, runs by double-click offline
-- [ ] Full voyage runs end-to-end: Troy → 4 dealt islands → Hades → Phaeacia → Ithaca, no dead-end states
-- [ ] Eat blind-commit with hold shortfall → lot-casting → starvation (two-strike) → death
-- [ ] Death economy: pay 1 favor to return (Charon); crewmate can pay (Orpheus)
-- [ ] Favor only moves via the gods (Abide-6 grants, Dare-1 removes, Give never; no player-to-player favor transfer)
-- [ ] Crossings: marble bag with rising land odds, variable length, always terminate; world-anger salts the bag
-- [ ] Four worked episodes: Helios (commons/doom), Cyclops (Boast curse), Sirens (rewarded temptation/wreck), Lotus (strand)
-- [ ] Fixed anchors: Hades (revival + peek), Phaeacia (favor-weighted pool paying gifts only), Ithaca (three-scene reversal finale)
-- [ ] 1–4 humans + bots filling the rest; bots decide everywhere a human does via `botDecide` (never a special rules path)
-- [ ] Three bot temperaments (greedy / balanced / pious) visibly change play
-- [ ] Blind-commit masking (1 / 2–3 human rules) + director-mode toggle; bots never leak commits
-- [ ] `?seed=` reproduces an identical game; 0-human seeded game runs unattended to a winner
-- [ ] Verbose narration log as the primary playtest instrument
+See `.planning/REQUIREMENTS.md` for v1.1 requirements (per-scene thematic effect tables, effects-as-balance retune, interactive board replacing the log).
 
 ### Out of Scope
 
@@ -44,7 +50,7 @@ The commons tension must actually fire: disaster should emerge from the *sum of 
 - Networked multiplayer — hotseat only; blind commit is simulated locally
 - Browser storage (localStorage/sessionStorage) — all state in one in-memory object; reload = fresh game
 - Frameworks/libraries/CDN/bundlers — vanilla only
-- The numeric balance/simulation ("Pastry-Pirates") tuning pass — deferred to a later milestone; prototype ships the locked structure with default `[tune]` constants
+- The *automated* numeric balance simulation ("Pastry-Pirates") tuning pass — still deferred. v1.1 hand-tunes the economy via the thematic per-stage payoffs (designer judgment, playtest-driven); the batch-simulation harness that machine-optimizes constants is a later milestone.
 
 ## Context
 
@@ -87,4 +93,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-07-24 after initialization*
+*Last updated: 2026-07-25 — started milestone v1.1 Themed Episodes & Interactive Board*
