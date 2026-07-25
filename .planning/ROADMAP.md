@@ -34,7 +34,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. When two players blind-commit hold-drawing actions the hold cannot both cover, the earlier player in turn order gets their action and the later player's is denied and their turn skipped — never partially applied — with narration explaining the shortfall.
   4. The resolution-order rule is a fixed-turn-order seam documented in a code comment, swappable to a future scheme (favor-weighted / turn-chip) without touching resolution logic.
   5. A 0-human `?seed=` run still completes unattended to a winner, every beat payoff traces to the labelled CONFIG convention (no scattered magic numbers), and the game remains one self-contained `index.html` with no new dependency.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 01-01-PLAN.md — Effect engine: beats data model + resolveEffect + narrate + validateBeats + labelled CONFIG convention, proven by converting Helios "The Meadow" (tracer) and Cyclops "The Wine" (stateful)
+- [ ] 01-02-PLAN.md — Sequential resolution: fixed-turn-order resolutionOrder seam, deny+skip unaffordable hold draws (never partial), retire eat lot-casting, determinism + seed-safety verification
 
 ### Phase 2: Themed Island Content & Favor-Law Reconciliation
 **Goal**: Every island scene carries its story's moral through tailored Dare/Abide/Give beats that honor the design asymmetry, and every existing Dare-grants-favor violation is reconciled — either retuned off the favor path or recorded as an explicit flagged exception.
@@ -80,7 +82,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Effect Engine & Sequential Resolution | v1.1 | 0/TBD | Not started | - |
+| 1. Effect Engine & Sequential Resolution | v1.1 | 0/2 | Not started | - |
 | 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 0/TBD | Not started | - |
 | 3. Anchor Verb Retrofit & Balance Retune | v1.1 | 0/TBD | Not started | - |
 | 4. Interactive Board | v1.1 | 0/TBD | Not started | - |
