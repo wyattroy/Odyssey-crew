@@ -98,45 +98,51 @@ Explicitly excluded for v1.1. Documented to prevent scope creep.
 
 ## Traceability
 
-Filled during roadmap creation.
+Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is assigned to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EFFECT-01 | — | Pending |
-| EFFECT-02 | — | Pending |
-| EFFECT-03 | — | Pending |
-| EFFECT-04 | — | Pending |
-| RESOLVE-01 | — | Pending |
-| RESOLVE-02 | — | Pending |
-| RESOLVE-03 | — | Pending |
-| CONTENT-01 | — | Pending |
-| CONTENT-02 | — | Pending |
-| CONTENT-03 | — | Pending |
-| CONTENT-04 | — | Pending |
-| CONTENT-05 | — | Pending |
-| CONTENT-06 | — | Pending |
-| ANCHOR-01 | — | Pending |
-| ANCHOR-02 | — | Pending |
-| ANCHOR-03 | — | Pending |
-| ANCHOR-04 | — | Pending |
-| BALANCE-01 | — | Pending |
-| BALANCE-02 | — | Pending |
-| BALANCE-03 | — | Pending |
-| BOARD-01 | — | Pending |
-| BOARD-02 | — | Pending |
-| BOARD-03 | — | Pending |
-| BOARD-04 | — | Pending |
-| BOARD-05 | — | Pending |
-| BOARD-06 | — | Pending |
-| BOARD-07 | — | Pending |
-| BOARD-08 | — | Pending |
-| BOARD-09 | — | Pending |
+| EFFECT-01 | Phase 1 | Pending |
+| EFFECT-02 | Phase 1 | Pending |
+| EFFECT-03 | Phase 1 | Pending |
+| EFFECT-04 | Phase 1 | Pending |
+| RESOLVE-01 | Phase 1 | Pending |
+| RESOLVE-02 | Phase 1 | Pending |
+| RESOLVE-03 | Phase 1 | Pending |
+| CONTENT-01 | Phase 2 | Pending |
+| CONTENT-02 | Phase 2 | Pending |
+| CONTENT-03 | Phase 2 | Pending |
+| CONTENT-04 | Phase 2 | Pending |
+| CONTENT-05 | Phase 2 | Pending |
+| CONTENT-06 | Phase 2 | Pending |
+| ANCHOR-01 | Phase 3 | Pending |
+| ANCHOR-02 | Phase 3 | Pending |
+| ANCHOR-03 | Phase 3 | Pending |
+| ANCHOR-04 | Phase 3 | Pending |
+| BALANCE-01 | Phase 3 | Pending |
+| BALANCE-02 | Phase 3 | Pending |
+| BALANCE-03 | Phase 3 | Pending |
+| BOARD-01 | Phase 4 | Pending |
+| BOARD-02 | Phase 4 | Pending |
+| BOARD-03 | Phase 4 | Pending |
+| BOARD-04 | Phase 4 | Pending |
+| BOARD-05 | Phase 4 | Pending |
+| BOARD-06 | Phase 4 | Pending |
+| BOARD-07 | Phase 4 | Pending |
+| BOARD-08 | Phase 4 | Pending |
+| BOARD-09 | Phase 4 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 29 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 29 ⚠️
+- Mapped to phases: 29 ✓
+- Unmapped: 0 ✓
+
+**Phase distribution:**
+- Phase 1 (Effect Engine & Sequential Resolution): 7 — EFFECT-01..04, RESOLVE-01..03
+- Phase 2 (Themed Island Content & Favor-Law Reconciliation): 6 — CONTENT-01..06
+- Phase 3 (Anchor Verb Retrofit & Balance Retune): 7 — ANCHOR-01..04, BALANCE-01..03
+- Phase 4 (Interactive Board): 9 — BOARD-01..09
 
 ---
 *Requirements defined: 2026-07-25*
-*Last updated: 2026-07-25 after initial definition*
+*Last updated: 2026-07-25 after roadmap creation (traceability filled, 29/29 mapped)*
