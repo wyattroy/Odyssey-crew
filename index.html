@@ -651,6 +651,13 @@ function resolutionOrder(actors){
 // shared hold is wholly unaffordable — callers must skip applyDeltas (and any fx)
 // entirely rather than let applyDeltas's clamp silently shrink a committed draw to a
 // partial one.
+// WR-05 (scope note): this is a GENERAL invariant, not just the two named reskin patches.
+// It fires for EVERY hold-drawing cell routed through resolveEffect — beats cells AND the
+// LAND_TABLE/SEA_TABLE fallback (so sea-crossing dares that draw on the hold are covered
+// too) — plus the reskin closures that draw the hold directly (mkHeliosDare, Cyclops
+// "The Stake"). This broad coverage is intended (deny-not-clamp everywhere the commons is
+// spent); Phase 3 balance verification should confirm it reads correctly across the sea/
+// land dares now included.
 function canAffordDraw(d){
   return !(d && d.crew < 0 && state.hold + d.crew < 0);
 }
@@ -686,6 +693,9 @@ async function eatPhase(){
         log(`${p.name} reaches for the hold, but it has already run dry — denied, meal missed.`,'l-bad');
         miss(p);
       }
+      // WR-02: re-render per reacher so the shared hold visibly drains and each
+      // sailor's fate lands one at a time (matches the Act reveal loop).
+      renderStrip(); renderPlayers();
       await botPause();
     }
   }
@@ -774,7 +784,10 @@ async function actPhase(env, scene, sceneIndex){
     const r = resolveEffect(p, scene, p.commit, p.lastBone, env);
     if(!r.logged){
       const n = narrate(p, p.commit, env, p.lastBone, r.tell, r.applied);
-      log(n.html, r.denied ? 'l-bad' : n.cls);
+      // WR-01: honor the resolver's computed class (l-act applied / l-sys no-op /
+      // l-bad denied) instead of narrate()'s flat 'l-act'. Table-fallback cells carry
+      // no class (r.cls null), so fall back to narrate()'s default for those.
+      log(n.html, r.cls || n.cls);
     }
     p._delta = r.applied || 'no change';
     renderPlayers();
