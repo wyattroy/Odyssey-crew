@@ -662,11 +662,11 @@ function resolutionOrder(actors){
 // shared hold is wholly unaffordable — callers must skip applyDeltas (and any fx)
 // entirely rather than let applyDeltas's clamp silently shrink a committed draw to a
 // partial one.
-// WR-05 (scope note): this is a GENERAL invariant, not just the two named reskin patches.
-// It fires for EVERY hold-drawing cell routed through resolveEffect — beats cells AND the
-// LAND_TABLE/SEA_TABLE fallback (so sea-crossing dares that draw on the hold are covered
-// too) — plus the reskin closures that draw the hold directly (mkHeliosDare, Cyclops
-// "The Stake"). This broad coverage is intended (deny-not-clamp everywhere the commons is
+// WR-05 (scope note): this is a GENERAL invariant, not just the one remaining named
+// reskin patch. It fires for EVERY hold-drawing cell routed through resolveEffect — beats
+// cells AND the LAND_TABLE/SEA_TABLE fallback (so sea-crossing dares that draw on the hold
+// are covered too) — plus the reskin closures that draw the hold directly (Cyclops "The
+// Stake"). This broad coverage is intended (deny-not-clamp everywhere the commons is
 // spent); Phase 3 balance verification should confirm it reads correctly across the sea/
 // land dares now included.
 function canAffordDraw(d){
@@ -817,22 +817,9 @@ function verbWord(v, env){
 /* ---------------------------------------------------------------- EPISODES --- */
 // A scene may provide verb labels, reskin handlers (custom resolve returning narration),
 // a collectiveCheck, plus episode-level onDepart / doom track.
-function mkHeliosDare(){
-  return (p,b)=>{
-    const d = Object.assign({}, LAND_TABLE.dare[b]);
-    if(!canAffordDraw(d)){
-      // RESOLVE-02: the hold portion of this cell can't be covered — deny the whole
-      // cell (no you/favor/world delta either), never a partial slaughter.
-      log(`${p.name} moves to slaughter a cow 🎲${b}, but the hold has nothing left to give — denied.`,'l-bad');
-      return 'denied — hold empty';
-    }
-    let extra='';
-    if(b===1){ d.world = (d.world||0)+1; extra=' — <b>seen by the Sun!</b>'; }
-    const s = applyDeltas(p,d);
-    log(`${p.name} slaughters a cow 🐄 🎲${b} → ${s}${extra}`, b===1?'l-bad':'l-act');
-    return s;
-  };
-}
+// (mkHeliosDare(), the reskin closure all three Helios scenes shared through the Phase-1
+// tracer, is retired as of 02-01: every Helios scene now resolves entirely through its
+// own beats table — see EPISODES.helios.scenes below.)
 const EPISODES = {
   helios: {
     id:'helios', title:'Cattle of Helios', trackName:"Helios's Wrath", worldStart:0, doomAt:CONFIG.helios.doomAt,
@@ -880,10 +867,77 @@ const EPISODES = {
         } },
       { name:'The Hunger', hook:'Days pass. The rod brings nothing. Bellies growl against the vow.',
         verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — hold out'}, give:{label:'Give — feed the hold'}},
-        reskin:{ dare: mkHeliosDare() } },
+        // Scene 2 of 3 (temptation) — the Dare high-face bounty escalates past scene 1
+        // (stash +2/hold+4 -> stash +4/hold+6); Abide/Give hold flat (the growing gap
+        // between restraint's flat reward and Dare's rising one IS the temptation).
+        beats: {
+          dare: {
+            1:{ d:{world:CONFIG.fx.small}, cls:'l-bad',
+                tell:(p)=>`Seen again — the herd scatters bellowing, and Helios's wrath climbs.` },
+            3:{ d:{favor:CONFIG.fx.penalty}, cls:'l-bad',
+                tell:(p)=>`Another cut, eaten alone. Helios's condemnation deepens.` },
+            4:{ d:{you:CONFIG.fx.small},
+                tell:(p)=>`A bolder kill, unseen — stash +2.` },
+            6:{ d:{you:CONFIG.fx.big, crew:CONFIG.fx.huge},
+                tell:(p)=>`A bolder kill, unseen — stash +4, hold +6.` },
+          },
+          abide: {
+            1:{ d:{},
+                tell:(p)=>`Hunger gnaws; still nothing to show for it.` },
+            3:{ d:{},
+                tell:(p)=>`Pat a cow again, hands shaking with want.` },
+            4:{ d:{},
+                tell:(p)=>`Cast the line again; the sea gives nothing.` },
+            6:{ d:{you:CONFIG.fx.small, favor:CONFIG.fx.tiny}, cls:'l-favor',
+                tell:(p)=>`Dandelions again, belly filled — and a quiet nod from the gods.` },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`A ration goes into the hold, and the giver goes hungrier.` },
+            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`Sharing thins one satchel to thicken the common store.` },
+            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`The hold grows heavier for the sacrifice.` },
+            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`Generosity, even now, is its own quiet reward.` },
+          },
+        } },
       { name:'The Reckoning', hook:'The hides crawl, the spitted meat lows. Helios counts his herd.',
         verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — repent'}, give:{label:'Give — feed the hold'}},
-        reskin:{ dare: mkHeliosDare() } },
+        // Scene 3 of 3 (doom) — the climactic Dare-6 bounty (stash +6/hold+6, non-
+        // decreasing vs. scene 2's +4/+6) against the sharpest Dare-1 wrath spike.
+        beats: {
+          dare: {
+            1:{ d:{world:CONFIG.fx.big}, cls:'l-bad',
+                tell:(p)=>`Seen a third time — the herd screams to the heavens, and Helios's wrath spikes.` },
+            3:{ d:{favor:CONFIG.fx.penalty}, cls:'l-bad',
+                tell:(p)=>`One more cut, eaten alone. Helios's condemnation is absolute.` },
+            4:{ d:{you:CONFIG.fx.big},
+                tell:(p)=>`A reckless kill, unseen — stash +4.` },
+            6:{ d:{you:CONFIG.fx.huge, crew:CONFIG.fx.huge},
+                tell:(p)=>`A reckless kill, unseen — stash +6, hold +6.` },
+          },
+          abide: {
+            1:{ d:{},
+                tell:(p)=>`The vow holds even now; the belly stays empty.` },
+            3:{ d:{},
+                tell:(p)=>`Pat a cow one last time, starving and resolute.` },
+            4:{ d:{},
+                tell:(p)=>`Cast the line one last time; the sea stays silent.` },
+            6:{ d:{you:CONFIG.fx.small, favor:CONFIG.fx.tiny}, cls:'l-favor',
+                tell:(p)=>`Dandelions at the last hour, belly filled — and a quiet nod from the gods.` },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`A ration goes into the hold, and the giver starves a little more.` },
+            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`Sharing thins one satchel to thicken the common store.` },
+            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`The hold grows heavier still for the sacrifice.` },
+            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`Generosity, to the end, is its own quiet reward.` },
+          },
+        } },
     ],
     onDepart(){
       if(state.world >= this.doomAt){
