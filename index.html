@@ -1042,6 +1042,13 @@ const EPISODES = {
             4:{ d:{}, tell:(p)=>`You hold the base level, watching the others do the work.` },
             6:{ d:{}, tell:(p)=>`You keep the stake from rolling — steady hands, no risk taken.` },
           },
+          // IN-01: intentional exception to the general Give law (Give sustains the
+          // crew/hold, never moves favor) — same as the Wine scene above, Cyclops
+          // models "wine" as ship stores being spent, not rations pooled, so Give here
+          // debits the hold instead of crediting it. This is deliberate and faithfully
+          // reproduces the pre-phase-2 reskin behavior — not a template to copy to any
+          // other island's Give cells (mirrors the flagged Sirens Dare-favor exception
+          // above in the collective-Dare comment block).
           give: {
             1:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
                 tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
