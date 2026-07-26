@@ -56,8 +56,8 @@
 - [x] **BOARD-01**: The board shows the voyage visually — the boat advancing across the sea / island track through Troy → islands → Hades → Phaeacia → Ithaca.
 - [x] **BOARD-02**: The crossing marble bag is shown as actual blue/white marbles that visibly drain as they are drawn during a crossing.
 - [x] **BOARD-03**: Dice/bone rolls are shown on the board with the live rolled face.
-- [ ] **BOARD-04**: Dare/Abide/Give are clickable affordances on the board (the primary play surface), for each human decision point where the prototype currently prompts.
-- [ ] **BOARD-05**: Scene narration (the current beat's story text) is surfaced *in* the board, making the board — not a raw text log — the primary play/read surface.
+- [x] **BOARD-04**: Dare/Abide/Give are clickable affordances on the board (the primary play surface), for each human decision point where the prototype currently prompts.
+- [x] **BOARD-05**: Scene narration (the current beat's story text) is surfaced *in* the board, making the board — not a raw text log — the primary play/read surface.
 - [x] **BOARD-06**: Each player's live status (favor, hold/rations, alive/dead, temperament) is visible on the board.
 - [x] **BOARD-07**: The board is a pure projection of game state — no parallel/duplicate state (uses the existing `_`-prefixed transient convention); all animation derives only from already-decided values, and `rng()` draws stay synchronous inside reducers (never in click handlers or animation callbacks).
 - [ ] **BOARD-08**: Blind-commit masking is preserved — the board never leaks bot or human commits before reveal (public/private display zones honor the existing 1 / 2–3 human masking rules and director-mode toggle).
@@ -126,8 +126,8 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | BOARD-01 | Phase 4 | Complete |
 | BOARD-02 | Phase 4 | Complete |
 | BOARD-03 | Phase 4 | Complete |
-| BOARD-04 | Phase 4 | Pending |
-| BOARD-05 | Phase 4 | Pending |
+| BOARD-04 | Phase 4 | Complete |
+| BOARD-05 | Phase 4 | Complete |
 | BOARD-06 | Phase 4 | Complete |
 | BOARD-07 | Phase 4 | Complete |
 | BOARD-08 | Phase 4 | Pending |
