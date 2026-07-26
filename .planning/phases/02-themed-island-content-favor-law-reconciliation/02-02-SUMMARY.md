@@ -130,3 +130,11 @@ None - plan executed exactly as written. Both tasks matched their `<action>` and
 ---
 *Phase: 02-themed-island-content-favor-law-reconciliation*
 *Completed: 2026-07-26*
+
+## Self-Check: PASSED
+
+- FOUND: index.html
+- FOUND: .planning/phases/02-themed-island-content-favor-law-reconciliation/02-02-SUMMARY.md
+- FOUND: b62bb0a (Task 1 commit)
+- FOUND: e52f0aa (Task 2 commit)
+- FOUND: 2d851cf (Summary commit)
