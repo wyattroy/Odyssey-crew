@@ -439,16 +439,20 @@ function renderStrip(){
 }
 function statusTok(p){
   if(p.status==='dead') return '💀 dead';
-  if(p.status==='starving') return '🟡 starving';
+  if(p.status==='starving') return '🟠 starving';
   if(p.lotusStruck) return '🌸 lotus-struck';
   return '🟢 alive';
 }
 function renderPlayers(){
+  // Crew row (BOARD-06): name, temperament, favor, alive/starving/dead status per card.
+  // The shared hold (🛢️) is deliberately NOT repeated here — it's rendered exactly once,
+  // prominently, by renderStrip()'s hold .stat (the commons). All values read directly
+  // from `state.players` on every call; nothing is cached in the DOM (BOARD-07).
   const host = $('players'); host.innerHTML='';
   state.players.forEach(p=>{
     const cls = 'p'+(p.status==='dead'?' dead':'')+(p.status==='starving'?' starving':'')+(p._acting?' acting':'');
     const c = el('div',cls);
-    const badge = p.isBot ? `🤖 ${tempIcon[p.temperament]}` : '🙂 human';
+    const badge = `${p.isBot ? '🤖' : '🙂'} ${tempIcon[p.temperament]}`;
     c.innerHTML = `<div class="nm">${p.name} <span class="badge">${badge}</span></div>
       <div class="res"><span>🍖 ${p.satchel}</span><span>🫒 ${p.favor}</span><span class="tok">${statusTok(p)}</span></div>`;
     if(p._committing) c.appendChild(el('div','committing', p.isBot?'🤖 committing…':'✍️ choosing…'));
