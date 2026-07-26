@@ -54,8 +54,8 @@
 ### Interactive Board (replaces the raw narration log)
 
 - [x] **BOARD-01**: The board shows the voyage visually — the boat advancing across the sea / island track through Troy → islands → Hades → Phaeacia → Ithaca.
-- [ ] **BOARD-02**: The crossing marble bag is shown as actual blue/white marbles that visibly drain as they are drawn during a crossing.
-- [ ] **BOARD-03**: Dice/bone rolls are shown on the board with the live rolled face.
+- [x] **BOARD-02**: The crossing marble bag is shown as actual blue/white marbles that visibly drain as they are drawn during a crossing.
+- [x] **BOARD-03**: Dice/bone rolls are shown on the board with the live rolled face.
 - [ ] **BOARD-04**: Dare/Abide/Give are clickable affordances on the board (the primary play surface), for each human decision point where the prototype currently prompts.
 - [ ] **BOARD-05**: Scene narration (the current beat's story text) is surfaced *in* the board, making the board — not a raw text log — the primary play/read surface.
 - [x] **BOARD-06**: Each player's live status (favor, hold/rations, alive/dead, temperament) is visible on the board.
@@ -124,8 +124,8 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | BALANCE-02 | Phase 3 | Pending |
 | BALANCE-03 | Phase 3 | Pending |
 | BOARD-01 | Phase 4 | Complete |
-| BOARD-02 | Phase 4 | Pending |
-| BOARD-03 | Phase 4 | Pending |
+| BOARD-02 | Phase 4 | Complete |
+| BOARD-03 | Phase 4 | Complete |
 | BOARD-04 | Phase 4 | Pending |
 | BOARD-05 | Phase 4 | Pending |
 | BOARD-06 | Phase 4 | Complete |

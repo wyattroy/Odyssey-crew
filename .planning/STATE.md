@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 3
 current_phase_name: Anchor Verb Retrofit & Balance Retune
 status: planning
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-07-26T05:30:11.297Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-07-26T05:38:30.080Z"
 last_activity: 2026-07-26
-last_activity_desc: Phase 2 complete, transitioned to Phase 3
+last_activity_desc: Phase 4 Plan 2 (crossing strip — marble bag + dice) executed out-of-order ahead of Phase 3; Phase 3 (Anchor Verb Retrofit & Balance Retune) is still the next phase due in numeric sequence
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 11
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 Phase: 3 — Anchor Verb Retrofit & Balance Retune
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-07-26 — Phase 4 Plan 1 (board tracer) executed out-of-order ahead of Phase 3; Phase 3 (Anchor Verb Retrofit & Balance Retune) is still the next phase due in numeric sequence
+Last activity: 2026-07-26 — Phase 4 Plan 2 (crossing strip — marble bag + dice) executed out-of-order ahead of Phase 3; Phase 3 (Anchor Verb Retrofit & Balance Retune) is still the next phase due in numeric sequence
 
-Progress: [███████░░░] 73%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Progress: [███████░░░] 73%
 | Phase 02 P04 | ~15min | 1 tasks | 1 files |
 | Phase 02 P05 | 20min | 2 tasks | 0 files |
 | Phase 04 P01 | 20min | 2 tasks | 1 files |
+| Phase 04 P02 | 18min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -94,10 +95,11 @@ Recent decisions affecting current work:
 - [Phase ?]: Lotus Abide/Dare semantics inverted per D-04 (Abide=risky eat-the-lotus, Dare=safe haul-back); third and final shipped Dare-favor violation closed (D-05)
 - [Phase ?]: Whole-game favor-law + asymmetry audit found zero unflagged violations across all four islands; Sirens remains the sole sanctioned Dare-favor exception, Lotus's D-04 verb-label inversion and Helios's restraint-bless are confirmed compliant-by-design (not violations); no index.html changes required.
 - [Phase 4]: renderBoard() established as the single board orchestrator seam, called from the existing render() — later Phase 4 plans (marble bag, dice, narration, action bar, masking) hang their own render<X>() sub-functions off this same seam rather than adding new render() call sites.
+- [Phase 4]: renderBag()/renderDice() read only reveal-gated/pure-state transients (state.crossing.bag, state.crossing._lastDrawn, p._boneShow) — never the pre-rolled p.lastBone — establishing the masking pattern later Phase 4 plans (action bar, log demotion) must follow.
 
 ### Pending Todos
 
-- Phase 4 Plan 1 (04-01, board tracer) was executed out-of-order ahead of Phase 3 per explicit direction. Phase 3 (Anchor Verb Retrofit & Balance Retune) remains unstarted and is still next in ROADMAP.md's numeric execution order (1 → 2 → 3 → 4); 04-01's Task 3 (checkpoint:human-verify, gate="blocking") still needs an orchestrator screenshot pass to fully close out that plan.
+- Phase 4 Plans 1-2 (04-01 board tracer, 04-02 crossing strip) were executed out-of-order ahead of Phase 3 per explicit direction. Phase 3 (Anchor Verb Retrofit & Balance Retune) remains unstarted and is still next in ROADMAP.md's numeric execution order (1 → 2 → 3 → 4); both 04-01's Task 3 and 04-02's Task 3 (checkpoint:human-verify, gate="blocking") still need an orchestrator screenshot pass to fully close out those plans.
 
 ### Blockers/Concerns
 
@@ -117,6 +119,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T05:30:11.292Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-07-26T05:37:41.913Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
