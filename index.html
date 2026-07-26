@@ -79,8 +79,15 @@
   .p .res{margin-top:6px; font-size:.95rem; display:flex; gap:12px; flex-wrap:wrap}
   .p .committing{color:var(--gold); font-size:.82rem; font-style:italic; margin-top:4px}
   .p .bone{margin-top:4px; font-size:.85rem; color:var(--dim)}
-  .p .ctrls{margin-top:6px}
   .tok{font-size:.8rem}
+
+  /* action bar (BOARD-04): the existing per-seat ctrl-<id> slot, re-hosted on the
+     board (inside the crew card) and styled as a large tappable affordance panel.
+     Empty slots (no pending human decision) collapse to nothing. */
+  .p .ctrls:empty{display:none; margin:0}
+  .p .ctrls{margin-top:8px; display:flex; flex-direction:column; gap:6px;
+    background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:10px; padding:8px}
+  .p .ctrls button{width:100%; margin:0; font-size:1.02rem; padding:11px 12px; text-align:left}
 
   /* prompt */
   #prompt{min-height:20px}
@@ -516,7 +523,14 @@ function promptButtons(q, hint, buttons, seatId){
     pendingResolve = res;
     const box = $('prompt');
     box.innerHTML = `<div class="q">${q}</div>`+(hint?`<div class="hint">${hint}</div>`:'');
-    const holder = (seatId!=null && !state.directorMode) ? el('div') : box;
+    // BOARD-04: always host a seated human's buttons in their own board card
+    // (ctrl-<seatId>) rather than the shared #prompt box, so the action bar is
+    // ON the board at every human decision point — director mode no longer
+    // routes buttons to the shared box (it only ever affected commit masking,
+    // collectCommits' `masked` flag above, never button placement's correctness).
+    // This is a re-host, not a new input path: onclick still calls askResolve(),
+    // resolving the SAME pending collectCommits() Promise as before.
+    const holder = (seatId!=null) ? el('div') : box;
     buttons.forEach(b=>{
       const btn = el('button', (b.cls||'')+(b.primary?' primary':''), b.label);
       if(b.disabled) btn.disabled=true;
