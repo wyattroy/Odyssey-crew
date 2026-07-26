@@ -247,10 +247,16 @@ const CONFIG = {
   // (struck or not) — the shore is generous, that is the trap. It no longer feeds the
   // taker's own satchel (`you`); per D-02 the meal goes into the shared hold instead.
   lotus:   { rations:2, struckOn:[[1], [1,3], [1,3,4]] },
-  // INTERIM (03-01): sirens' magnitudes below still feed the mechanical fold in
-  // EPISODES.sirens (world+favor merged into one favor delta) — 03-03/03-04 re-author
-  // Sirens thematically on CONFIG.econ, at which point these become scene-local again.
-  sirens:  { listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1, wreckWorldExtra:1, wreckCrew:1 },
+  // RE-AUTHORED (03-04): Sirens' own thematic kickers, favor/hold-denominated, tier-
+  // indexed [scene1, scene2, scene3] like every other island's D-10 escalation. Scene 1
+  // (tier 0) is far enough off the Rocks that a bad listen (Dare face 1) costs only the
+  // standard CONFIG.econ.dareCaught favor loss — no ship damage yet (both arrays are 0
+  // at index 0). From Scene 2 the Rocks are close enough that the worst face also tears
+  // a mate's grip loose (wreckHold — a `crew`/hold loss) and the gods' anger compounds
+  // with proximity (wreckFavorExtra — layered onto the standard dareCaught cost via
+  // `alwaysD`, not `d`, so it lands even when the hold can't cover the crew draw; see
+  // the face-1 cells in EPISODES.sirens and their WR-03 note).
+  sirens:  { wreckHold: [0, 1, 2], wreckFavorExtra: [0, 1, 2] },
   helios:  { herd:12, restraintBless:2 },
   // CONFIG.cyclops (BALANCE-01, 03-03): the island's own thematic kickers, layered onto
   // CONFIG.econ's shared tiers via econD()'s `extra` — never a bare integer in a beats
@@ -923,8 +929,10 @@ function botAct(p, ctx, T){
       if(ctx.sceneIndex===2){ return 'dare'; }           // slip out under the sheep
     }
     if(ep.id==='sirens'){
-      // INTERIM (03-01): favor-based stand-in for the retired world-anger threshold —
-      // re-authored thematically in 03-03/03-04.
+      // RE-AUTHORED (03-04): greedy sailors listen for the kleos/stash, pious sailors
+      // stay bound to the ropes; anyone eases off Dare once the crew's aggregate favor
+      // has already sunk to the reef-line, since another bad listen only pushes the
+      // ship closer to doomToll().
       if(p.temperament==='greedy') return 'dare';         // listen
       if(crewFavor()<=doomFloor()) return 'abide';        // ease the Rocks when favor runs low
       if(p.temperament==='pious') return 'abide';
@@ -1388,109 +1396,137 @@ const EPISODES = {
     }
   },
 
-  // INTERIM (03-01): Sirens is mechanically converted to two verbs + one currency.
-  // Every retired `world` cost/gain below is folded directly into `favor` (a payoff
-  // that used to anger the world becomes favor lost by the actor; one that used to
-  // appease it becomes favor gained) — the two numbers are simply summed since favor
-  // is now the only currency. This uniformly worsens Dare in the later scenes (net
-  // favor goes negative even on some high faces) — that is a KNOWN, ACCEPTED artifact
-  // of the interim mechanical fold, not a design decision. 03-03/03-04 re-author Sirens
-  // thematically on CONFIG.econ, and the sanctioned Dare-favor exception (D-05) is
-  // restored there on purpose. Give (binding/plugging a mate) folds into Abide, whose
-  // own cells contributed nothing before — a straight fold, not a merge.
+  // RE-AUTHORED (03-04): Sirens on two verbs — rewarded temptation, not punished
+  // curiosity. Dare unstops your ears for the song: the transgression is hearing what
+  // kills lesser men, built from the standard econD('dare',tier,face) shape (dareStash
+  // grants stash/kleos on a clean listen, dareCaught costs favor when the gods catch you
+  // — the same shape Helios/Cyclops already use for their own Dare roads). Abide stays
+  // bound to the mast and keeps hands on the oar and ropes — the old third verb's
+  // bind-a-mate/haul-the-oar action folds into Abide, which is where it always belonged
+  // (D-02): it always feeds the shared hold and a high roll earns the gods' notice
+  // (plain econD('abide',tier,face), no scene-specific kicker — Sirens has no Cyclops-
+  // style per-cell cost, so the standard shape is the whole story).
+  //
+  // DARE-FAVOR DECISION (D-05/D-11, Claude's Discretion — settled here): the three-verb
+  // model's single sanctioned Dare-favor exception (a high Dare roll blessed with favor)
+  // is RETIRED, not carried forward. Under two verbs, Dare's only relationship to favor
+  // is a COST (D-03) — grafting a favor GRANT onto Dare here would be the one place in
+  // the whole game a player could farm favor by transgressing, directly undercutting the
+  // spine of the law the rest of this redesign establishes. The song still pays: in
+  // stash (kleos as a concrete good, via dareStash) and in the narrative kleos of the
+  // `tell` text itself — just never in favor. This is the plan's own recommended
+  // default and matches 03-03's Cyclops decision (Dare may cost favor, never grant it),
+  // so the favor law reads identically on every island: Abide is the only favor road.
+  // See the SUMMARY for the full reasoning and the consolidated favor-law block (Task 2)
+  // for where this decision is recorded game-wide.
+  //
+  // THE REEF (D-05/T-03-14/T-03-15): from Scene 2 on, the worst face (a bad listen) also
+  // tears a mate's grip loose — a `crew`/hold loss via CONFIG.sirens.wreckHold[tier].
+  // That loss is deliberately kept OUT of the cell's favor cost: `d` carries only the
+  // deniable hold loss, and the full favor cost (the standard dareCaught figure, itself
+  // produced by econD(), further reduced by the named CONFIG.sirens.wreckFavorExtra[tier]
+  // kicker) lives in `alwaysD` so it lands even when an empty hold denies the `crew` draw
+  // whole (WR-03/WR-05 — canAffordDraw's deny-whole-cell invariant is correct for `d`
+  // itself and stays; alwaysD is the documented escape for a bundled non-hold penalty).
+  // `sirens.onDepart` reads aggregate crewFavor() against doomFloor() and, on
+  // catastrophe, calls the SAME doomToll() helper Helios uses — capped, and never the
+  // last living sailor (D-07/ANCHOR-04) — so the reef doom is the sum of the crew's own
+  // transgressions expressed in one currency, the commons tragedy made literal on the
+  // one island whose myth is temptation itself.
   sirens: {
     id:'sirens', title:'The Sirens',
     hook:'A song of all knowledge drifts over the water. To hear it is glory; to steer toward it is death on the reef.',
     scenes:[
       { name:'The First Notes', hook:'Sweet and far. Wax in hand, rope on the mast.',
-        verbs:{dare:{label:'Dare — unstop your ears and listen'}, abide:{label:'Abide — bind/stopper a mate'}},
+        verbs:{dare:{label:'Dare — unstop your ears and listen'}, abide:{label:'Abide — keep to the ropes, mind a mate\'s wax'}},
         beats: {
           dare: {
-            1:{ d:{favor:-(CONFIG.sirens.worldPerListen+CONFIG.sirens.wreckWorldExtra)}, cls:'l-bad',
-                tell:(p)=>`Ears unstopped for a heartbeat — only a snatch of melody drifts by. No glory in it, and the gods take note of the risk.` },
-            3:{ d:{favor:CONFIG.sirens.listenFavor[3]-CONFIG.sirens.worldPerListen}, cls:'l-bad',
-                tell:(p)=>`A few clear notes reach you — kleos, but the Rocks nearer cost more favor than the glory was worth.` },
-            4:{ d:{},
-                tell:(p)=>`The song carries further than it should — glory and risk cancel out even.` },
-            6:{ d:{favor:CONFIG.sirens.listenFavor[6]-CONFIG.sirens.worldPerListen}, cls:'l-favor',
-                tell:(p)=>`Every word lands whole and true — rich kleos outweighs the risk.` },
+            1:{ d:econD('dare',0,1), cls:'l-bad',
+                tell:(p)=>`Ears unstopped for a heartbeat — only a snatch of melody, no glory in it, and the gods mark the risk.` },
+            3:{ d:econD('dare',0,3),
+                tell:(p)=>`A few clear notes reach you, worth a memento tucked away — stash +1.` },
+            4:{ d:econD('dare',0,4),
+                tell:(p)=>`The song carries further than it should — stash +2, no one the wiser.` },
+            6:{ d:econD('dare',0,6),
+                tell:(p)=>`Every word lands whole and true — stash +3, a clean, unseen thrill.` },
           },
           abide: {
-            1:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`You knot a mate's bonds a little tighter — the gods take gentle notice.` },
-            3:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`A firm hand on a mate's wax and rope — a quiet favor gained.` },
-            4:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`You check a mate's bonds are sound — a quiet favor gained.` },
-            6:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`Steady hands, a mate made safe — favor gained.` },
+            1:{ d:econD('abide',0,1),
+                tell:(p)=>`You check a mate's wax and rope, eyes on the horizon — a scrap for the hold.` },
+            3:{ d:econD('abide',0,3),
+                tell:(p)=>`A firm hand on the ropes, mind on the ship, not the song — the hold grows.` },
+            4:{ d:econD('abide',0,4),
+                tell:(p)=>`Steady work at the mast — the hold grows fuller.` },
+            6:{ d:econD('abide',0,6), cls:'l-favor',
+                tell:(p)=>`Rope and wax checked twice, nothing left to chance — the hold grows, and the gods take quiet notice.` },
           },
         } },
       { name:'The Full Song', hook:'It swells — names, wars, the future. The ship leans toward the voices.',
-        verbs:{dare:{label:'Dare — listen deeper'}, abide:{label:'Abide — plug a mate\'s ears'}},
+        verbs:{dare:{label:'Dare — listen deeper, ears bared to the swell'}, abide:{label:'Abide — hold fast at the mast, steady a mate'}},
         beats: {
           dare: {
-            // WR-03: the merged favor penalty lives in `alwaysD` (not `d`) so it lands
-            // even when the hold can't cover the `crew` draw in `d` — otherwise
-            // canAffordDraw's deny-whole-cell invariant (WR-05, correct for `d` itself)
-            // would let an empty hold silently void the favor cost too.
-            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{favor:-(CONFIG.sirens.worldPerListen+CONFIG.fx.tiny+CONFIG.sirens.wreckWorldExtra)}, cls:'l-bad',
-                tell:(p)=>`The song swells and pulls you under its spell — no glory in it, only a mate's grip torn loose and the gods' patience thinning.` },
-            3:{ d:{favor:CONFIG.sirens.listenFavor[3]-(CONFIG.sirens.worldPerListen+CONFIG.fx.tiny)}, cls:'l-bad',
-                tell:(p)=>`Names, wars, the shape of your own fate — worth the hearing, though it costs more favor than it earns.` },
-            4:{ d:{favor:CONFIG.sirens.listenFavor[4]-(CONFIG.sirens.worldPerListen+CONFIG.fx.tiny)}, cls:'l-bad',
-                tell:(p)=>`Whole verses now, secrets no living man should know — rich kleos, still a net loss of favor.` },
-            6:{ d:{},
-                tell:(p)=>`Every word cuts clean and true — glory and risk balance out even.` },
+            // WR-03: the crew/hold loss stays in `d` (deniable if the hold can't cover
+            // it); the full favor cost — econD()'s own dareCaught figure for this face,
+            // further reduced by the named wreckFavorExtra kicker — lives in `alwaysD`
+            // so it lands unconditionally, exactly as the invariant requires.
+            1:{ d:{crew:-CONFIG.sirens.wreckHold[1]}, alwaysD:{favor: econD('dare',1,1).favor - CONFIG.sirens.wreckFavorExtra[1]}, cls:'l-bad',
+                tell:(p)=>`The song swells and pulls you under its spell — a mate's grip tears loose from the ropes, and the gods' patience thins further.` },
+            3:{ d:econD('dare',1,3), cls:'l-bad',
+                tell:(p)=>`Names, wars, the shape of your own fate — stash +1, though the gods mark the risk.` },
+            4:{ d:econD('dare',1,4),
+                tell:(p)=>`Whole verses now, secrets no living man should know — stash +3, unseen.` },
+            6:{ d:econD('dare',1,6),
+                tell:(p)=>`Every word cuts clean and true — stash +4, a clean thrill of glory.` },
           },
           abide: {
-            1:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`You press fresh wax into a straining mate's ears — the gods take gentle notice.` },
-            3:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`You lean on the ropes, holding a thrashing mate steady — a quiet favor gained.` },
-            4:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`You plug a mate's ears against the swelling song — a quiet favor gained.` },
-            6:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`A mate saved from the worst of it — favor gained.` },
+            1:{ d:econD('abide',1,1),
+                tell:(p)=>`You press fresh wax into a straining mate's ears, hands steady at the mast — a scrap for the hold.` },
+            3:{ d:econD('abide',1,3),
+                tell:(p)=>`You lean on the ropes, holding a thrashing mate steady — the hold grows.` },
+            4:{ d:econD('abide',1,4), cls:'l-favor',
+                tell:(p)=>`You plug a mate's ears against the swelling song — the hold grows, and the gods take quiet notice.` },
+            6:{ d:econD('abide',1,6), cls:'l-favor',
+                tell:(p)=>`A mate saved from the worst of it, the hold fuller for your steadiness — the gods take full notice.` },
           },
         } },
       { name:'The Reef', hook:'White water ahead. The song at its height.',
-        verbs:{dare:{label:'Dare — one last listen'}, abide:{label:'Abide — haul on the oar'}},
+        verbs:{dare:{label:'Dare — one last listen, though the Rocks loom'}, abide:{label:'Abide — haul the oar, drag the ship clear'}},
         beats: {
           dare: {
-            // WR-03: merged favor penalty in `alwaysD` — see Scene 2's identical note.
-            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{favor:-(CONFIG.sirens.worldPerListen+CONFIG.fx.small+CONFIG.sirens.wreckWorldExtra)}, cls:'l-bad',
-                tell:(p)=>`One last listen, too close to the white water — a mate loses their hold and the gods turn away.` },
-            3:{ d:{favor:CONFIG.sirens.listenFavor[3]-(CONFIG.sirens.worldPerListen+CONFIG.fx.small)}, cls:'l-bad',
-                tell:(p)=>`Even now, even here, the song is worth the hearing — but it costs more favor than it earns.` },
-            4:{ d:{favor:CONFIG.sirens.listenFavor[4]-(CONFIG.sirens.worldPerListen+CONFIG.fx.small)}, cls:'l-bad',
-                tell:(p)=>`The full song, unbearably close — glory to last a lifetime, still a net loss of favor.` },
-            6:{ d:{favor:CONFIG.sirens.listenFavor[6]-(CONFIG.sirens.worldPerListen+CONFIG.fx.small)}, cls:'l-bad',
-                tell:(p)=>`You hear it whole, at the reef's very edge — the richest kleos of the voyage, still not enough to offset the risk.` },
+            // WR-03: see Scene 2's identical note — the crew/hold loss stays deniable in
+            // `d`; the escalated favor cost lives in `alwaysD`.
+            1:{ d:{crew:-CONFIG.sirens.wreckHold[2]}, alwaysD:{favor: econD('dare',2,1).favor - CONFIG.sirens.wreckFavorExtra[2]}, cls:'l-bad',
+                tell:(p)=>`One last listen, too close to the white water — the ship shudders against the Rocks and the gods turn away entirely.` },
+            3:{ d:econD('dare',2,3), cls:'l-bad',
+                tell:(p)=>`Even now, even here, the song is worth the hearing — stash +2, though the gods mark it sharply.` },
+            4:{ d:econD('dare',2,4),
+                tell:(p)=>`The full song, unbearably close — stash +4, glory to last a lifetime.` },
+            6:{ d:econD('dare',2,6),
+                tell:(p)=>`You hear it whole, at the reef's very edge — stash +6, the richest kleos of the voyage.` },
           },
           abide: {
-            1:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`You haul on the oar with everyone else, dragging the ship from the Rocks — the gods take gentle notice.` },
-            3:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`You throw your weight against the oar — a quiet favor gained.` },
-            4:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`Every stroke matters now — a quiet favor gained.` },
-            6:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
-                tell:(p)=>`A clean, powerful stroke — favor gained.` },
+            1:{ d:econD('abide',2,1),
+                tell:(p)=>`You haul on the oar with everyone else, dragging the ship from the Rocks — a scrap for the hold.` },
+            3:{ d:econD('abide',2,3),
+                tell:(p)=>`You throw your weight against the oar — the hold grows.` },
+            4:{ d:econD('abide',2,4), cls:'l-favor',
+                tell:(p)=>`Every stroke matters now — the hold grows, and the gods take quiet notice.` },
+            6:{ d:econD('abide',2,6), cls:'l-favor',
+                tell:(p)=>`A clean, powerful stroke pulls the ship free — the hold grows fullest, and the gods take full notice.` },
           },
         } },
     ],
-    // D-05/T-03-03: same shape as Helios — read crewFavor() against doomFloor(), and
-    // never wipe the whole crew even when the reef claims its due.
+    // D-05/T-03-03/T-03-14: same shape as Helios's catastrophe branch — read
+    // crewFavor() against doomFloor() and hand off to the SAME shared doomToll() helper
+    // (capped, never the last living sailor, D-07/ANCHOR-04) rather than a bespoke
+    // per-player die throw. Two branches only (catastrophe / the song fades astern) —
+    // Sirens never had a third "blessing" branch even before this redesign.
     onDepart(){
       const favor = crewFavor(), df = doomFloor();
       if(favor <= df){
-        log(`🪨 The crew's favor with the gods (${favor}) has sunk to the reef-line — the ship grinds onto the Rocks. The sea takes its due.`,'l-die');
-        livingPl().forEach(p=>{
-          if(livingCount()<=1) return; // never take the last living sailor (D-07/ANCHOR-04)
-          p.lastBone=throwBone();
-          if(p.lastBone===1){ p.status='dead'; p.satchel=0; log(`💀 ${p.name} 🎲1 — pulled under.`,'l-die'); }
-        });
+        const victims = doomToll('sirens');
+        const named = victims.length ? victims.map(v=>v.name).join(', ') : null;
+        log(`🪨 The crew's favor with the gods (${favor}) has sunk to the reef-line — the ship grinds onto the Rocks${named?`, and the sea claims ${named}`:''}.`,'l-die');
       } else {
         log(`🎶 The song fades astern. The listeners keep their glorious knowledge (and favor).`,'l-favor');
       }
