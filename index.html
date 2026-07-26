@@ -249,7 +249,13 @@ const CONFIG = {
   // Sirens thematically on CONFIG.econ, at which point these become scene-local again.
   sirens:  { listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1, wreckWorldExtra:1, wreckCrew:1 },
   helios:  { herd:12, restraintBless:2 },
-  cyclops: { need:3, drunkNeeded:2, stakeThreshold:2, boastFavorCost:3 },
+  // CONFIG.cyclops (BALANCE-01, 03-03): the island's own thematic kickers, layered onto
+  // CONFIG.econ's shared tiers via econD()'s `extra` — never a bare integer in a beats
+  // cell. winePour is the modest cost the cup itself draws from the ship's stores each
+  // time it's poured (Scenes 1-2's Abide); steadyCost is the personal ration a sailor
+  // gives up bracing/steadying a mate (Scene 3's Abide). Both are flat across scenes on
+  // purpose — the escalation (D-10) comes from CONFIG.econ's own rising tiers underneath.
+  cyclops: { need:3, drunkNeeded:2, stakeThreshold:2, boastFavorCost:3, winePour:1, steadyCost:1 },
   // CONFIG.econ — the single two-verb payoff surface (D-10, EFFECT-04): per-scene-tier
   // face maps read by econD() to build every Helios beats cell's `d`. tier 0/1/2 = an
   // episode's 1st/2nd/3rd scene; magnitudes are non-decreasing tier to tier on both
@@ -810,9 +816,9 @@ async function askHuman(p, kind, ctx){
   }
   if(kind==='pride'){
     return promptButtons(`${p.name}: the escape — do you boast?`,
-      `Hold your tongue (humble, safe) or Boast "It was Odysseus!" for a lump of kleos now — but it curses the ship (Poseidon worsens every future crossing).`,
+      `Hold your tongue (humble, safe) or boast "It was Odysseus!" for glory — but it costs you ${CONFIG.cyclops.boastFavorCost}🫒 favor with the gods, and low crew favor roughens every crossing still ahead.`,
       [ {label:'🤐 Hold your tongue', value:'abide', cls:'abide'},
-        {label:'📣 Boast! (+kleos, curse the ship)', value:'dare', cls:'dare'} ], p.id);
+        {label:`📣 Boast! (glory, −${CONFIG.cyclops.boastFavorCost}🫒)`, value:'dare', cls:'dare'} ], p.id);
   }
   if(kind==='revive'){
     // D-06: revival is offered on ANY beat now, not only at Hades — ctx.toll carries the
@@ -1242,111 +1248,130 @@ const EPISODES = {
     }
   },
 
-  // INTERIM (03-01): Cyclops is mechanically converted to two verbs + one currency so
-  // it doesn't trip the validator/econcheck — thematic re-authoring (the escalating arc,
-  // hand-tuned CONFIG.econ payoffs) lands in a later plan (03-03/03-04), not here.
-  // Give's function (pour wine → drunk++, IN-01's hold-debit exception) is folded into
-  // Abide, whose own inert cells contributed nothing — so this is a straight fold, not a
-  // merge. The drunk-counter fx is load-bearing (the Stake scene's threshold reads it)
-  // and is carried over unchanged.
+  // RE-AUTHORED (03-03): Cyclops reads as pride and cunning on two verbs. Abide is the
+  // guest-gift road (pour the wine, brace the stake, steady a mate) — it always feeds
+  // the shared cause against the giant (econD's abideHold, netted against the scene's
+  // own CONFIG.cyclops cost kicker) and wins the gods' notice on a high roll (abideFavor).
+  // Dare is the self-interested road (strike sober, drive the stake hardest, slip out
+  // first) — real personal upside via econD's dareStash, and a low roll means the giant
+  // (or, in Scene 3, the gods regardless) catches your recklessness: a favor COST via
+  // dareCaught. Per the acceptance bar: Dare never GRANTS favor anywhere on this island
+  // (the sanctioned exception would be the stake's success bonus below, and it is NOT
+  // taken — see stakeCheck()); Dare MAY cost favor on a bad roll, which is a cost, not a
+  // grant, and stays in-vocabulary. The drunk-counter fx (Scenes 1-2) and the escape-
+  // progress fx (Scenes 1 and 3) are load-bearing and carried through unchanged in shape.
   cyclops: {
     id:'cyclops', title:'The Cyclops', need:CONFIG.cyclops.need,
     hook:'Trapped in the cave, a boulder across the mouth. Polyphemus feeds on the idle. Only wine and cunning open the way.',
     scenes:[
       { name:'The Wine', hook:'The giant sprawls. Odysseus offers a skin of dark wine.',
-        verbs:{dare:{label:'Dare — attack him sober (needs a 6)'}, abide:{label:'Abide — pour wine (make him drunk)'}},
+        verbs:{dare:{label:'Dare — strike him sober now (folly unless you land a 6)'}, abide:{label:'Abide — pour the wine for the plan'}},
         beats: {
           abide: {
-            1:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
-            3:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
-            4:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
-            6:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+            1:{ d:econD('abide',0,1,{crew:-CONFIG.cyclops.winePour}), fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`Wine sloshes into a wooden cup — a small gift toward the plan. Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+            3:{ d:econD('abide',0,3,{crew:-CONFIG.cyclops.winePour}), fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`Wine sloshes into a wooden cup — a small gift toward the plan. Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+            4:{ d:econD('abide',0,4,{crew:-CONFIG.cyclops.winePour}), fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`A fuller pour, most of it toward the plan and only a little toward his cup. Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
+            6:{ d:econD('abide',0,6,{crew:-CONFIG.cyclops.winePour}), cls:'l-favor', fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`A generous, steady pour — Polyphemus grows drunker still (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}), and the gods notice the patience it took.` },
           },
           dare: {
-            1:{ d:{you:CONFIG.fx.penalty}, tell:(p)=>`A blind lunge at a wide-awake monster — folly, and it costs a ration.` },
-            3:{ d:{you:CONFIG.fx.penalty}, tell:(p)=>`A blind lunge at a wide-awake monster — folly, and it costs a ration.` },
-            4:{ d:{you:CONFIG.fx.penalty}, tell:(p)=>`A blind lunge at a wide-awake monster — folly, and it costs a ration.` },
-            6:{ d:{}, fx:(p,b)=>{ state.ep.progress++; },
-                tell:(p)=>`A single sober strike lands true — Polyphemus reels, blinded a little more (escape ${state.ep.progress}/${state.episode.need}).` },
+            1:{ d:econD('dare',0,1), cls:'l-bad',
+                tell:(p)=>`A blind lunge at a wide-awake monster — his hand finds you first. Folly, and the gods mark the recklessness.` },
+            3:{ d:econD('dare',0,3),
+                tell:(p)=>`No clean strike lands on a monster this alert — but in the scramble your fingers close on a bite from his stores.` },
+            4:{ d:econD('dare',0,4),
+                tell:(p)=>`Still no opening to strike true — but you come away with a fuller handful from his hoard.` },
+            6:{ d:econD('dare',0,6), fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`A single sober strike lands true — Polyphemus reels, blinded a little more (escape ${state.ep.progress}/${state.episode.need}), and your hand closes on plunder besides.` },
           },
         },
         collectiveCheck(){ polyphemusHunger(state.ep.drunk>state.ep._drunkBefore || state.ep.progress>state.ep._progBefore); }
       },
       { name:'The Stake', hook:'With the giant snoring drunk, the crew heaves the glowing stake.',
-        verbs:{dare:{label:'Dare — drive the stake home'}, abide:{label:'Abide — pour more wine'}},
+        verbs:{dare:{label:'Dare — drive the stake for yourself'}, abide:{label:'Abide — brace the shaft, keep pouring'}},
+        // Per-cell beats narrate each sailor's individual heave/brace/pour — the personal
+        // stash/favor stakes below are real, but they never decide whether the stake
+        // drives home; that stays entirely inside stakeCheck()'s own collectiveCheck seam.
         beats: {
           dare: {
-            1:{ d:{you:CONFIG.fx.penalty}, cls:'l-bad',
-                tell:(p)=>`The stake bucks in your grip — a scald, a stumble, a scrap of ration lost in the dark.` },
-            3:{ d:{},
-                tell:(p)=>`You lean into the shaft with the others, straining against the weight.` },
-            4:{ d:{},
-                tell:(p)=>`A solid heave — the point bites deeper into the coals.` },
-            6:{ d:{},
-                tell:(p)=>`Your grip is true, driving hardest of anyone on the shaft.` },
+            1:{ d:econD('dare',1,1), cls:'l-bad',
+                tell:(p)=>`The stake bucks in your grip — a scald, a stumble in the dark, and the gods mark the recklessness.` },
+            3:{ d:econD('dare',1,3), cls:'l-bad',
+                tell:(p)=>`You lean into the shaft with the others, straining against the weight — a solid heave, though it's noted against you.` },
+            4:{ d:econD('dare',1,4),
+                tell:(p)=>`A solid heave — the point bites deeper into the coals, and you come away better for it.` },
+            6:{ d:econD('dare',1,6),
+                tell:(p)=>`Your grip is true, driving hardest of anyone on the shaft — and richer for the effort.` },
           },
           abide: {
-            1:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
-            3:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
-            4:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
-            6:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
-                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
+            1:{ d:econD('abide',1,1,{crew:-CONFIG.cyclops.winePour}), fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`One more skin poured into the giant's cup, the rest toward the plan — he sinks deeper (drunk ${state.ep.drunk}).` },
+            3:{ d:econD('abide',1,3,{crew:-CONFIG.cyclops.winePour}), fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`One more skin poured into the giant's cup, the rest toward the plan — he sinks deeper (drunk ${state.ep.drunk}).` },
+            4:{ d:econD('abide',1,4,{crew:-CONFIG.cyclops.winePour}), cls:'l-favor', fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`A steady, patient pour — he sinks deeper (drunk ${state.ep.drunk}), and the gods take a quiet notice.` },
+            6:{ d:econD('abide',1,6,{crew:-CONFIG.cyclops.winePour}), cls:'l-favor', fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`A generous last skin — he sinks deepest yet (drunk ${state.ep.drunk}), and the gods notice fully.` },
           },
         },
         collectiveCheck(actors){ stakeCheck(actors); }
       },
       { name:'Under the Sheep', hook:'Blinded, he gropes. Cling to the wool and slip past — then the sea, and the terrible temptation to be known.',
-        verbs:{dare:{label:'Dare — slip out under the wool'}, abide:{label:'Abide — steady a mate'}},
+        verbs:{dare:{label:'Dare — slip out first, alone'}, abide:{label:'Abide — cling tight, steady a mate'}},
         // Individual escape (no collectiveCheck here — each sailor's own Dare roll
-        // decides their own fate via the fx hatch on state.ep.progress). No favor grant
-        // anywhere in this scene (D-05 — Cyclops rewards survival, never favor).
+        // decides their own fate via the fx hatch on state.ep.progress). Faces 3 and 4
+        // (40% weight each) are the PRIMARY escape triggers, not the rare face 6 alone
+        // (Pitfall 11) — only face 1 (the giant's groping hand, or the gods marking a too-
+        // bold first-out sailor) fails to progress.
         beats: {
           dare: {
-            1:{ d:{you:CONFIG.fx.penalty}, cls:'l-bad',
-                tell:(p)=>`A hoof catches your ribs and Polyphemus's fingers brush your back — you scramble for cover, no closer to free.` },
-            3:{ d:{}, fx:(p,b)=>{ state.ep.progress++; },
-                tell:(p)=>`You slip out under the ram's belly, breath held — escape ${state.ep.progress}/${state.episode.need}.` },
-            4:{ d:{}, fx:(p,b)=>{ state.ep.progress++; },
-                tell:(p)=>`Clean and quiet, you're through the boulder's gap — escape ${state.ep.progress}/${state.episode.need}.` },
-            6:{ d:{you:CONFIG.fx.tiny}, fx:(p,b)=>{ state.ep.progress++; },
-                tell:(p)=>`A perfect slip, and your hand closes on a stray wineskin on the way past — escape ${state.ep.progress}/${state.episode.need}.` },
+            1:{ d:econD('dare',2,1), cls:'l-bad',
+                tell:(p)=>`You bolt first, alone, straight into Polyphemus's groping hand — no closer to free, and the gods mark the haste.` },
+            3:{ d:econD('dare',2,3), fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`You slip out under the ram's belly, quick enough to get away with it — escape ${state.ep.progress}/${state.episode.need}, though the gods note the risk.` },
+            4:{ d:econD('dare',2,4), fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`Clean and quiet, you're through the boulder's gap with a stray wineskin besides — escape ${state.ep.progress}/${state.episode.need}.` },
+            6:{ d:econD('dare',2,6), fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`A perfect slip, sure-footed and lucky besides — escape ${state.ep.progress}/${state.episode.need}, stash swollen with plunder.` },
           },
           abide: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`You brace a mate's ram from behind, a scrap of your own ration lost in the scramble.` },
-            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`You steady a stumbling mate's grip, giving up a little of your own store.` },
-            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`A shoulder under a mate's ram, your own share thinner for it.` },
-            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`You guide a struggling mate clear, sacrificing gladly.` },
+            1:{ d:econD('abide',2,1,{you:-CONFIG.cyclops.steadyCost}),
+                tell:(p)=>`You brace a mate's ram from behind, a scrap of your own ration lost in the scramble, but the effort helps the plan.` },
+            3:{ d:econD('abide',2,3,{you:-CONFIG.cyclops.steadyCost}),
+                tell:(p)=>`You steady a stumbling mate's grip, giving up a little of your own store to see them through.` },
+            4:{ d:econD('abide',2,4,{you:-CONFIG.cyclops.steadyCost}), cls:'l-favor',
+                tell:(p)=>`A shoulder under a mate's ram, your own share thinner for it — the gods take notice of the sacrifice.` },
+            6:{ d:econD('abide',2,6,{you:-CONFIG.cyclops.steadyCost}), cls:'l-favor',
+                tell:(p)=>`You guide a struggling mate clear, sacrificing gladly — the gods notice fully.` },
           },
         },
       },
     ],
-    // D-05: Cyclops is an intentional no-favor island (survival/pride, not piety). The
-    // boast now costs the boaster's OWN favor (folded from the retired curse track)
-    // instead of feeding a persistent world curse. Do not re-add a favor GRANT on the
-    // boast branch below — the cost stands.
+    // D-05/BALANCE-01: Cyclops's Dare may now COST favor on a bad roll (the gods marking
+    // recklessness, per the verb-reading above) but must never GRANT it — the island's
+    // only favor GRANTS come from Abide's high rolls. The stake's collective success
+    // (stakeCheck below) is the one place a Dare-favor GRANT could be added as a
+    // sanctioned, explicitly flagged exception; this plan does NOT take that option —
+    // the blinding pays escape progress alone (see stakeCheck's own comment and the
+    // SUMMARY's recorded decision). The boast below costs the boaster's OWN favor
+    // (folded from the retired curse track) and, because favor now drives seasExtraBlue()
+    // for every living sailor, that cost roughens every crossing still ahead — same shape
+    // the retired curse track had, through the one currency.
     async prideSubCommit(){
       const survivors = actingPl();
       if(survivors.length===0) return;
       logBeat('— The Pride —');
-      flavor('Safe on the water. Each sailor decides, in secret, whether to shout their name back at the shore.');
+      flavor('Safe on the water, each sailor decides, in secret, whether to shout their own name back at the shore.');
       await collectCommits(survivors, 'pride', {});
       for(const p of survivors){
         if(p.commit==='dare'){
           p.favor -= CONFIG.cyclops.boastFavorCost;
-          log(`📣 ${p.name} BOASTS "It was Odysseus!" — glory, and nothing else. The gods take note: favor −${CONFIG.cyclops.boastFavorCost} (→ ${p.favor}).`,'l-bad');
+          log(`📣 ${p.name} BOASTS "It was Odysseus!" — glory, and nothing else. The gods take note: favor −${CONFIG.cyclops.boastFavorCost} (→ ${p.favor}), and the seas ahead grow rougher for it.`,'l-bad');
         } else {
-          log(`🤐 ${p.name} holds their tongue.`,'l-sys');
+          log(`🤐 ${p.name} holds their tongue — no glory, no cost.`,'l-sys');
         }
       }
     },
@@ -1592,9 +1617,11 @@ function polyphemusHunger(progressed){
       victim.status='dead'; victim.satchel=0; }
   }
 }
-// D-05: Cyclops is an intentional no-favor island (survival/pride, not piety). The
-// collective blinding rewards escape progress only — no favor to darers. Do not
-// re-add a favor grant on the success branch below.
+// D-05/BALANCE-01 (03-03 decision): the stake's collective success is the one place a
+// Dare-favor GRANT could be added as a sanctioned, explicitly flagged exception (the same
+// pattern Sirens uses, D-05). This plan does NOT take that option — the blinding rewards
+// escape progress alone, keeping Cyclops's only favor GRANTS on Abide's high rolls. Do not
+// add a favor grant on the success branch below without also flagging it here.
 function stakeCheck(actors){
   const darers = actors.filter(p=>p.commit==='dare');
   if(darers.length===0){ log(`No one drives the stake — the moment passes.`,'l-sys'); polyphemusHunger(false); return; }
