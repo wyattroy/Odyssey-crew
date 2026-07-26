@@ -641,7 +641,11 @@ function botAct(p, ctx, T){
       // no longer just scene 2) — so the temperament split below is the mirror image
       // of every other island's lotus/dare-favor-free branches above.
       const struck = state.players.find(x=>x.lotusStruck && notDead(x));
-      if(struck && p.temperament!=='greedy' && canGive) return 'dare'; // go haul a struck mate back
+      // WR-01: the rescue is costless (lotusDareFx only spends a ration if one is
+      // available — it never requires or is blocked by satchel), so the bot's decision
+      // must not be gated on canGive; a balanced bot with an empty satchel should still
+      // take a free rescue instead of falling through to the 50/50 default below.
+      if(struck && p.temperament!=='greedy') return 'dare'; // go haul a struck mate back
       if(p.temperament==='greedy') return 'abide';   // give in to the free ration — self first
       if(p.temperament==='pious') return 'dare';     // resist, mind kept on Ithaca
       return rnd()<0.5?'dare':'abide';
