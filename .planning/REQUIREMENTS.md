@@ -53,13 +53,13 @@
 
 ### Interactive Board (replaces the raw narration log)
 
-- [ ] **BOARD-01**: The board shows the voyage visually — the boat advancing across the sea / island track through Troy → islands → Hades → Phaeacia → Ithaca.
+- [x] **BOARD-01**: The board shows the voyage visually — the boat advancing across the sea / island track through Troy → islands → Hades → Phaeacia → Ithaca.
 - [ ] **BOARD-02**: The crossing marble bag is shown as actual blue/white marbles that visibly drain as they are drawn during a crossing.
 - [ ] **BOARD-03**: Dice/bone rolls are shown on the board with the live rolled face.
 - [ ] **BOARD-04**: Dare/Abide/Give are clickable affordances on the board (the primary play surface), for each human decision point where the prototype currently prompts.
 - [ ] **BOARD-05**: Scene narration (the current beat's story text) is surfaced *in* the board, making the board — not a raw text log — the primary play/read surface.
-- [ ] **BOARD-06**: Each player's live status (favor, hold/rations, alive/dead, temperament) is visible on the board.
-- [ ] **BOARD-07**: The board is a pure projection of game state — no parallel/duplicate state (uses the existing `_`-prefixed transient convention); all animation derives only from already-decided values, and `rng()` draws stay synchronous inside reducers (never in click handlers or animation callbacks).
+- [x] **BOARD-06**: Each player's live status (favor, hold/rations, alive/dead, temperament) is visible on the board.
+- [x] **BOARD-07**: The board is a pure projection of game state — no parallel/duplicate state (uses the existing `_`-prefixed transient convention); all animation derives only from already-decided values, and `rng()` draws stay synchronous inside reducers (never in click handlers or animation callbacks).
 - [ ] **BOARD-08**: Blind-commit masking is preserved — the board never leaks bot or human commits before reveal (public/private display zones honor the existing 1 / 2–3 human masking rules and director-mode toggle).
 - [ ] **BOARD-09**: Seeded determinism is preserved — `?seed=` reproduces an identical game, and the 0-human seeded run still completes unattended to a winner; a readable narration transcript survives (log demoted to a collapsible / director-mode panel, not deleted) so unattended runs stay debuggable.
 
@@ -123,13 +123,13 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | BALANCE-01 | Phase 3 | Pending |
 | BALANCE-02 | Phase 3 | Pending |
 | BALANCE-03 | Phase 3 | Pending |
-| BOARD-01 | Phase 4 | Pending |
+| BOARD-01 | Phase 4 | Complete |
 | BOARD-02 | Phase 4 | Pending |
 | BOARD-03 | Phase 4 | Pending |
 | BOARD-04 | Phase 4 | Pending |
 | BOARD-05 | Phase 4 | Pending |
-| BOARD-06 | Phase 4 | Pending |
-| BOARD-07 | Phase 4 | Pending |
+| BOARD-06 | Phase 4 | Complete |
+| BOARD-07 | Phase 4 | Complete |
 | BOARD-08 | Phase 4 | Pending |
 | BOARD-09 | Phase 4 | Pending |
 

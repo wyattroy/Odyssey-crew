@@ -98,14 +98,14 @@ Plans (single self-contained index.html → each plan runs in its own wave, sequ
   4. Blind-commit masking holds: with 2+ humans and director-mode off, no board zone leaks a bot or human commit before reveal (public zones render freely from state; private-until-reveal zones stay gated).
   5. The board is a pure projection of state — no parallel/duplicate state, `_`-prefixed transients only, `rng()` draws stay synchronous inside reducers — so `?seed=` reproduces an identical game, the 0-human seeded run completes unattended to a winner, and a readable transcript survives (log demoted to a collapsible/director panel, not deleted).
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 **UI hint**: yes
 
 Plans (single self-contained index.html → each plan runs in its own wave, sequential; tracer-first):
 
 **Wave 1**
 
-- [ ] 04-01-PLAN.md — Tracer: renderBoard() scaffold + voyage track with advancing ⛵ boat + upgraded crew row (favor/hold/status), pure projection (BOARD-01, BOARD-06, BOARD-07)
+- [x] 04-01-PLAN.md — Tracer: renderBoard() scaffold + voyage track with advancing ⛵ boat + upgraded crew row (favor/hold/status), pure projection (BOARD-01, BOARD-06, BOARD-07)
 
 **Wave 2** *(blocked on Wave 1 — same file)*
 
@@ -129,4 +129,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Effect Engine & Sequential Resolution | v1.1 | 2/2 | Complete    | 2026-07-25 |
 | 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 5/5 | Complete    | 2026-07-26 |
 | 3. Anchor Verb Retrofit & Balance Retune | v1.1 | 0/TBD | Not started | - |
-| 4. Interactive Board | v1.1 | 0/TBD | Not started | - |
+| 4. Interactive Board | v1.1 | 1/4 | In Progress|  |
