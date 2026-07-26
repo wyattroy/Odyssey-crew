@@ -44,7 +44,12 @@ async function runSeed(seed){
     const players=state.players.map(p=>({t:p.temperament,favor:p.favor,dead:p.status==='dead'}));
     const deaths = state.log.filter(e=>e.cls==='l-die').length;
     const winnerNamed = state.log.some(e=>String(e.html).includes('THE VERDICT'));
-    return {over:state.over, players, deaths, winnerNamed};
+    // Ithaca-outcome breakdown (ANCHOR-04, 03-06 Task 2): the mechanical proof that the
+    // finale always resolves to a winner, across the same seed set this sweep already
+    // runs. fallbackFired records whether the zero-qualifier bow-floor fallback fired —
+    // the knife-edge check (Pitfall 7): it must fire in at least one seed and NOT in most.
+    const fallbackFired = state.log.some(e=>String(e.html).includes('No one clears the floor'));
+    return {over:state.over, players, deaths, winnerNamed, fallbackFired};
   })()`,{filename:'run'});
   return await runner.runInContext(context);
 }
@@ -57,6 +62,11 @@ let allDead=0, someAlive=0, fullCrew=0, errs=0, incomplete=0, noWinner=0, seedsW
 const survDist={0:0,1:0,2:0,3:0,4:0};
 const winnerFavors=[]; const survivorCounts=[];
 const byTemp={greedy:{alive:0,n:0,favorSum:0},balanced:{alive:0,n:0,favorSum:0},pious:{alive:0,n:0,favorSum:0}};
+// Ithaca-outcome breakdown (ANCHOR-04, 03-06 Task 2): three MUTUALLY EXCLUSIVE buckets —
+// every completed seed lands in exactly one — plus a count of how many seeds fired the
+// zero-qualifier bow-floor fallback. The buckets summing to the seed count IS the
+// mechanical statement that the finale always resolves (never a fourth, unaccounted case).
+let ithacaFullCrew=0, ithacaPartial=0, ithacaNobodyAlive=0, ithacaFallback=0;
 for(const r of rows){
   if(r.err){errs++;continue;}
   if(!r.over){incomplete++;continue;}
@@ -65,12 +75,17 @@ for(const r of rows){
   survivorCounts.push(surv);
   if(surv===0)allDead++; else someAlive++;
   if(surv===4)fullCrew++;
+  if(surv===4) ithacaFullCrew++;
+  else if(surv===0) ithacaNobodyAlive++;
+  else ithacaPartial++;
+  if(r.fallbackFired) ithacaFallback++;
   if(r.deaths>0) seedsWithADeath++;
   if(!r.winnerNamed) noWinner++;
   const pool = r.players.filter(p=>!p.dead); const cand = pool.length?pool:r.players;
   winnerFavors.push(Math.max(...cand.map(p=>p.favor)));
   r.players.forEach(p=>{const b=byTemp[p.t]; if(b){b.n++; if(!p.dead)b.alive++; b.favorSum+=p.favor;}});
 }
+const ithacaBucketSum = ithacaFullCrew + ithacaPartial + ithacaNobodyAlive;
 const n=rows.length-errs-incomplete;
 const pct=x=>((100*x/n)||0).toFixed(0)+'%';
 const pctNum=x=>((100*x/n)||0);
@@ -92,6 +107,13 @@ console.log(`favor spread (distinct winner favors): ${distinctFavors.join(',')} 
 console.log(`by temperament (alive-rate | avg favor):`);
 for(const t of ['greedy','balanced','pious']){const b=byTemp[t]; console.log(`  ${t}: ${b.n?((100*b.alive/b.n).toFixed(0)+'%'):'-'} alive | favor ${b.n?(b.favorSum/b.n).toFixed(1):'-'}`);}
 
+console.log(`\n=== ANCHOR-04: Ithaca-outcome breakdown (always-resolves-to-a-winner) ===`);
+console.log(`full crew (4) home: ${ithacaFullCrew} (${pct(ithacaFullCrew)})`);
+console.log(`some survivors (1-3) home: ${ithacaPartial} (${pct(ithacaPartial)})`);
+console.log(`nobody alive: ${ithacaNobodyAlive} (${pct(ithacaNobodyAlive)})`);
+console.log(`buckets: ${ithacaFullCrew} + ${ithacaPartial} + ${ithacaNobodyAlive} = ${ithacaBucketSum} (seed count: ${n}) — accounted: ${ithacaBucketSum===n}`);
+console.log(`zero-qualifier bow-floor fallback fired: ${ithacaFallback} seed(s) (${pct(ithacaFallback)})`);
+
 if(ASSERT){
   const greedyAliveRate = byTemp.greedy.n ? byTemp.greedy.alive/byTemp.greedy.n : 0;
   const piousAliveRate = byTemp.pious.n ? byTemp.pious.alive/byTemp.pious.n : 0;
@@ -99,6 +121,12 @@ if(ASSERT){
   const piousAvgFavor = byTemp.pious.n ? byTemp.pious.favorSum/byTemp.pious.n : 0;
   const unmet=[];
   if(!(noWinner === TARGETS.noWinner)) unmet.push(`noWinner: got ${noWinner}, want === ${TARGETS.noWinner}`);
+  // ANCHOR-04 (03-06 Task 2): wire the Ithaca-outcome bucket accounting to the SAME
+  // noWinner===0 target — every seed must land in exactly one bucket (full crew / some
+  // survivors / nobody alive) with the buckets summing to the seed count. A mismatch here
+  // means a seed resolved to a winner (noWinner passed) but fell outside all three known
+  // outcome shapes — a real "unaccounted" case 03-07's balance retune must not introduce.
+  if(!(ithacaBucketSum === n)) unmet.push(`ithacaBucketSum: got ${ithacaBucketSum} (full ${ithacaFullCrew} + partial ${ithacaPartial} + nobody-alive ${ithacaNobodyAlive}), want === ${n} (every seed accounted for)`);
   if(!((errs+incomplete) === TARGETS.errors)) unmet.push(`errors: got ${errs+incomplete}, want === ${TARGETS.errors}`);
   if(!(pctNum(allDead) <= TARGETS.allDeadPct)) unmet.push(`allDeadPct: got ${pctNum(allDead).toFixed(1)}, want <= ${TARGETS.allDeadPct}`);
   if(!(avg(survivorCounts) >= TARGETS.meanSurvivors)) unmet.push(`meanSurvivors: got ${avg(survivorCounts).toFixed(2)}, want >= ${TARGETS.meanSurvivors}`);

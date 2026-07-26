@@ -268,9 +268,13 @@ const CONFIG = {
   // each beats cell's `fx` — standing is not one of the three currencies (DELTA_KEYS), so
   // it never travels through econD/d, exactly like Cyclops's counters (EFFECT-04 escape
   // hatch). grabStanding is Scene 2 Dare's own standing kicker on the high faces
-  // (shouldering to the front of the qualifying line).
+  // (shouldering to the front of the qualifying line). homecomingPerMate is the finale's
+  // homecoming reward (D-07/ECON-04): a favor bonus paid to EVERY living sailor after the
+  // pot split, scaled by (homecomingPerMate * livingCount()) — so a full crew home earns
+  // each sailor far more than a thin crew does, without ever gating eligibility, the bow
+  // contest, or the pot split (it lands strictly after both are already decided).
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2,
-             grabStanding:2 },
+             grabStanding:2, homecomingPerMate:1 },
   // D-04: lotus.struckOn escalates scene-to-scene (taste -> drowse -> strand) — the
   // faces that take Abide (eating the fruit) from "just a meal" to "lotus-struck".
   // rations (03-03, BALANCE-01): the fruit's own generous kicker, layered via econD()'s
@@ -1195,7 +1199,7 @@ function verbWord(v, env){
 //   - Dare's only relationship to favor is a COST. Dare always feeds the actor's own
 //     stash; a LOW roll means the gods catch you and favor is lost (econD's dareStash/
 //     dareCaught, D-03). Dare NEVER grants favor — not on any island, not on any face.
-//   - Nothing else moves favor except four NAMED VOYAGE-LEVEL SOURCES, each a deliberate,
+//   - Nothing else moves favor except five NAMED VOYAGE-LEVEL SOURCES, each a deliberate,
 //     game-structural event rather than a per-turn verb payoff:
 //       1. The Troy allocation (setupTroy) — restraint at the sack buys favor up front.
 //       2. An island's departure blessing — currently only Helios's onDepart (a full
@@ -1204,6 +1208,9 @@ function verbWord(v, env){
 //          favor spent, never earned, to buy a life back.
 //       4. Ithaca's Reckoning pot (runIthaca) — the finale's one-time payout to whoever
 //          qualifies for and wins the bow contest.
+//       5. Ithaca's homecoming reward (runIthaca, D-07/ECON-04, 03-06) — a bonus paid to
+//          EVERY living sailor after the pot split, scaled by living count; reward-only,
+//          never gates eligibility or the pot itself.
 //   - The favor-road's own bookkeeping is survival-contingent: `p.islandFavorEarned`
 //     tracks the NET favor delta (positive or negative) a player accrues while on the
 //     current island. A player who dies before the island resolves forfeits any
@@ -2262,9 +2269,31 @@ async function runPhaeacia(){
   render();
 }
 
-// runIthaca() — ANCHOR-03, D-08c, 03-06. The finale's three scenes now run through the
+// runIthaca() — ANCHOR-03/04, D-08c, 03-06. The finale's three scenes now run through the
 // SAME shared two-verb act path as every island/anchor (Pitfall 9); the bespoke bow-floor/
 // qualifier-slice/contribution-throw/pot-split mechanics are UNCHANGED beneath each scene.
+//
+// ANCHOR-04 — the always-reaches-a-winner guarantee, walked exhaustively (every exit below
+// resolves to a named verdict, never a stall):
+//   - a full living crew: qualifiers exist, the pot splits among them, the homecoming
+//     reward pays everyone, finishGame() names the highest-favor living sailor (or a tie).
+//   - a single living survivor: they qualify alone (directly or via the zero-qualifier
+//     fallback below), win the whole pot, and finishGame() names them outright.
+//   - every survivor below the bow floor: the zero-qualifier fallback names the highest-
+//     standing living sailor as the sole "qualifier" by default — the contest is never
+//     left simply unresolved.
+//   - nobody alive at all: `living` is empty, every step below becomes a clean no-op (no
+//     actPhase call, no qualifiers, no homecoming bonus — CONFIG.ithaca.homecomingPerMate
+//     * livingCount() is 0), and finishGame()'s own alive.length?alive:state.players
+//     fallback still names a verdict from the full roster's favor tally — THE VERDICT is
+//     never skipped.
+//   - runGame()'s own deadEndCheck() gate (run immediately before every beat, including
+//     this one) means runIthaca() can never even be ENTERED with the whole-voyage crew
+//     already favor-bankrupt — that ending resolves earlier, at deadEndCheck() itself.
+// A final defensive guard closes this function: finishGame() is called unconditionally
+// (finishGame() itself is idempotent via its own `if(state.over) return` guard), so even a
+// future edit that accidentally calls finishGame() earlier in this function can never
+// leave the hall unresolved.
 async function runIthaca(){
   logBeat(`🏰 Ithaca — the homecoming`);
   flavor('The voyage was what the world did to you. This is what you do now that you hold the power. The suitors have drained the house all game — the bill comes due.');
@@ -2325,7 +2354,21 @@ async function runIthaca(){
     log(`With no one to string the bow, the suitors are not thrown down. The house stays lost.`,'l-bad');
   }
   render();
-  finishGame();
+
+  // The homecoming reward (D-07/ECON-04, finale half, 03-06): a REWARD-only bonus for the
+  // crew that made it home, landing strictly AFTER the pot split above — it can never gate
+  // eligibility, qualification, or the pot share, since both are already fully decided by
+  // this point. Scaled by (homecomingPerMate * livingCount()) so a full crew home earns
+  // every sailor far more than a thin crew — and a crew of zero simply earns nothing (the
+  // bonus computes to 0, no line is logged, nobody is penalized). Named voyage-level favor
+  // source #5 — see the FAVOR LAW block above EPISODES.
+  const homecomingBonus = CONFIG.ithaca.homecomingPerMate * livingCount();
+  if(homecomingBonus>0){
+    log(`🏠 The homecoming: ${livingCount()} of the crew made it back — every living sailor gains ${homecomingBonus}🫒 for bringing the ship home.`,'l-favor');
+    livingPl().forEach(p=>{ p.favor += homecomingBonus; });
+  }
+
+  if(!state.over) finishGame();
 }
 
 /* ---------------------------------------------------------------- SAFETY / END --- */
