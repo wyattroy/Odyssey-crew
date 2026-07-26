@@ -34,6 +34,15 @@ behavior_unverified: 0
 - **No rng in render/click**: grep-confirmed across renderBoard/Bag/Dice/Narration/Players/Strip/Track and the click handlers.
 - **Single self-contained index.html**, vanilla JS, offline — preserved.
 
+## Post-completion enhancement — per-roll stakes preview (user request)
+
+After the phase closed, the user flagged a real playability gap: on the board you can't choose Dare vs Abide without seeing the stakes. Added a read-only preview of each verb×face outcome inside the action boxes (commits `79d87ee`, `9cab79a`):
+- Reads directly from the public `beats` table authored in Phase 2 — **no engine/RNG/state/masking change** (the hidden thing is the roll, not the payoff table). Determinism + harness unaffected.
+- **Compact numeric** for the ~75% of cells whose effect is a plain delta (Helios `🎲6 +2🍖 +4🛢️`, Sirens favor/rocks, all Gives).
+- **Targeted hybrid** (user's choice) for the ~25% `fx`-closure cells (mostly Lotus): each face shows the number PLUS the authored flavor `tell`, so hidden risk is legible (`🎲1 +2🍖 «…lotus-struck»`).
+- New pure helpers `deltaStakes(d)` / `stakesLine(vt, p)` + `.stakes`/`.stk-*` CSS. Applies to every island verb decision; anchors inherit it once Phase 3 puts them on the verb grammar.
+- Verified via live DOM inspection (Helios compact, Lotus flavor rows) + harness completion across seeds. (Chrome screenshot tool was throwing a serialization bug at the time, so this was DOM-verified rather than image-verified.)
+
 ## Notes / deferred
 
 - The marble bag is on-screen only briefly per crossing (land-heavy bag → 1–2 draws then "Land ho!"). Functionally correct; if you want it to linger, a small post-crossing hold is a trivial follow-up.
