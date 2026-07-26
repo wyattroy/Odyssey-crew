@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Effect Engine & Sequential Resolution** - Declarative `beats` data model + generic resolver + coverage validator, with blind commits resolving sequentially against the shared hold (completed 2026-07-25)
 - [x] **Phase 2: Themed Island Content & Favor-Law Reconciliation** - Every island scene (Helios/Cyclops/Sirens/Lotus × 3 stages) authored to its moral with the Dare/Abide/Give asymmetry, favor-law violations reconciled (completed 2026-07-26)
-- [ ] **Phase 3: Anchor Verb Retrofit & Balance Retune** - Hades/Phaeacia/Ithaca rebuilt onto the verb grammar without regression, and the hand-tuned deltas become the intended economy that kills the death-spiral
+- [ ] **Phase 3: Economy & Verb Redesign (Anchors + Balance)** - Two verbs (Abide/Dare), favor as the single divine currency and revival lifeline, anchors on the same grammar, tuned so cooperation wins and defection merely survives
 - [x] **Phase 4: Interactive Board** - A visual board (boat, draining marble bag, live dice, clickable verbs, on-board narration/status) replaces the raw log as a pure projection of state (completed 2026-07-26)
 
 ## Phase Details
@@ -70,20 +70,24 @@ Plans (single self-contained index.html → each plan runs in its own wave, sequ
 - [x] 02-04-PLAN.md — Lotus: 3 scenes to beats, Abide succumbs (lotus-struck) / Dare hauls back (no favor) / Give shares (CONTENT-04)
 - [x] 02-05-PLAN.md — Favor-law + asymmetry audit across all 12 island scenes + fixed multi-seed 0-human regression sweep (CONTENT-05, CONTENT-06)
 
-### Phase 3: Anchor Verb Retrofit & Balance Retune
+### Phase 3: Economy & Verb Redesign (Anchors + Balance)
 
-**Goal**: Hades, Phaeacia, and Ithaca gain thematic Dare/Abide/Give beats without regressing their validated bespoke mechanics, and the hand-tuned per-stage deltas become the game's intended economy — the known death-spiral is fixed and verified across a fixed multi-seed 0-human sweep.
+> **Scope expanded during discuss-phase 3** (see `phases/03-.../03-CONTEXT.md`). What began as "anchor retrofit + number tuning" became a core-economy redesign: the game moves to **two verbs (Abide/Dare)**, the peril tracks fold into **favor** as the single divine currency, and favor becomes the **revival lifeline**. This deliberately re-opens work in Phases 1 (engine), 2 (island beats) and 4 (board buttons) — expected and accepted.
+
+**Goal**: Odyssey Crew runs on a two-verb, one-divine-currency economy — Abide serves the commons (fills the hold; a high roll earns favor), Dare transgresses for personal stash (a low roll is caught and costs favor), favor buys your life back from the dead, the three anchors run on the same grammar without regressing their validated mechanics, and the tuned result makes cooperation the way to win and defection the way to merely survive.
 **Depends on**: Phase 2
-**Requirements**: ANCHOR-01, ANCHOR-02, ANCHOR-03, ANCHOR-04, BALANCE-01, BALANCE-02, BALANCE-03
+**Requirements**: ANCHOR-01, ANCHOR-02, ANCHOR-03, ANCHOR-04, BALANCE-01, BALANCE-02, BALANCE-03, ECON-01, ECON-02, ECON-03, ECON-04
 **Success Criteria** (what must be TRUE):
 
-  1. Hades presents Dare/Abide/Give beats and still delivers the validated revival + peek mechanics; Phaeacia presents verb beats and still pays out the favor-weighted gift-court (gifts only); Ithaca's three-scene reversal finale presents verb beats and still resolves its reckoning to a winner.
-  2. All validated v1.0 anchor invariants survive the retrofit: no dead-end states, revival economy intact, favor-weighted Phaeacia pool intact, finale always reaches a winner.
-  3. Across the fixed multi-seed 0-human sweep, most games reach Ithaca with some crew alive, the hold/rations economy stays under real pressure (neither mass starvation nor trivial survival), and every run terminates at a winner — the hand-tuned `beats` deltas, not the old `[tune]` defaults, are the intended economy.
-  4. Cross-episode favor reconciliation confirms favor stays contested: cooperation (favor) remains the optimal path to *winning* while defection remains optimal only for *bare survival*; favor is neither dominated nor trivially maxed, with real spread in final totals across the seed set.
-  5. The retrofit adds no dependency and preserves `?seed=` determinism — the seeded 0-human run reproduces identically and still completes unattended to a winner.
+  1. The game presents exactly two verbs everywhere (board, prompts, beats, stakes preview): Abide always provisions the hold and earns favor on a high roll; Dare fills your own stash but costs favor when a low roll means the gods catch you. No `give` path remains.
+  2. Favor is the only divine currency — `state.world` and `state.curse` are gone; low aggregate crew favor visibly roughens crossings and triggers the collective doom, and high favor calms them.
+  3. A dead crewmate returns by paying favor on their turn, or by a living crewmate spending favor to raise them; the run ends on favor bankruptcy rather than a starvation spiral, and most crew reach Ithaca when the crew keeps its favor.
+  4. Keeping the crew whole is visibly worth it — a fuller crew eases the voyage and strengthens the Ithaca finale — yet a depleted crew still always resolves to a winner (no dead-ends).
+  5. Hades, Phaeacia and Ithaca all run on the two-verb grammar with their validated mechanics intact (peek + revival, gifts-only favor-weighted court, three-scene finale that always produces a winner).
+  6. The fixed multi-seed 0-human sweep shows the intended tension: defect (greedy/dare) survives but wins little favor, cooperate (pious/abide) accumulates favor but is fragile, favor totals stay widely spread, every run terminates at a winner, and `?seed=` still reproduces identically.
 
 **Plans**: TBD
+**UI hint**: yes (board action bar drops to two verbs; stakes preview follows)
 
 ### Phase 4: Interactive Board
 
@@ -128,5 +132,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|-----------|----------------|--------|-----------|
 | 1. Effect Engine & Sequential Resolution | v1.1 | 2/2 | Complete    | 2026-07-25 |
 | 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 5/5 | Complete    | 2026-07-26 |
-| 3. Anchor Verb Retrofit & Balance Retune | v1.1 | 0/TBD | Not started | - |
+| 3. Economy & Verb Redesign (Anchors + Balance) | v1.1 | 0/TBD | Not started | - |
 | 4. Interactive Board | v1.1 | 4/4 | Complete    | 2026-07-26 |
