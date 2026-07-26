@@ -33,7 +33,6 @@
   button.primary{background:linear-gradient(180deg,#2f6aa8,#255488); border-color:#3a7fbf; font-weight:600}
   button.dare{border-color:#8a3b34}
   button.abide{border-color:#3a7a55}
-  button.give{border-color:#8a6a2f}
   button.sel{outline:2px solid var(--gold)}
   label{color:var(--dim); font-size:.9rem}
   input,select{font-family:inherit; background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:7px; padding:6px 8px}
@@ -211,6 +210,13 @@
    All state in one in-memory object. No storage, no network, no libraries.
    ========================================================================== */
 
+/* ---------------------------------------------------------------- VOCABULARY --- */
+// VERBS / DELTA_KEYS (D-01/D-04, ECON-01/ECON-02): the single sources of truth for the
+// verb grammar and the currency vocabulary. validateBeats() and econcheck.mjs both read
+// these — a scene or a payoff cell that strays outside either list fails loud.
+const VERBS = ['dare','abide'];
+const DELTA_KEYS = ['you','crew','favor'];
+
 /* ---------------------------------------------------------------- CONFIG --- */
 const CONFIG = {
   players: 4,
@@ -220,18 +226,39 @@ const CONFIG = {
   crossing: { blueStart:5, whiteStart:1, whitePerDraw:1 },
   charonToll: 1,
   troy: { min:1, max:6 },                              // take t → +t rations, +(7-t) favor
-  boastCurse: 3,                                       // Poseidon's curse added on a Boast (persistent)
-  // f(curse) → extra blue marbles seeded into future crossing bags
-  worldToExtraBlue: (curse) => Math.min(6, Math.floor(curse / 2)),
   phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1 },
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
   // D-04: lotus.struckOn escalates scene-to-scene (taste -> drowse -> strand) — the
   // faces that take Abide (eating the fruit) from "just a meal" to "lotus-struck".
   // rations is the flat free-meal gain Abide grants on every non-struck face.
   lotus:   { rations:2, struckOn:[[1], [1,3], [1,3,4]] },
-  sirens:  { doomAt:6, listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1, wreckWorldExtra:1, wreckCrew:1 },
-  helios:  { herd:12, doomAt:7, restraintBless:2, blessAt:2 },
-  cyclops: { need:3, drunkNeeded:2, stakeThreshold:2 },
+  // INTERIM (03-01): sirens' magnitudes below still feed the mechanical fold in
+  // EPISODES.sirens (world+favor merged into one favor delta) — 03-03/03-04 re-author
+  // Sirens thematically on CONFIG.econ, at which point these become scene-local again.
+  sirens:  { listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1, wreckWorldExtra:1, wreckCrew:1 },
+  helios:  { herd:12, restraintBless:2 },
+  cyclops: { need:3, drunkNeeded:2, stakeThreshold:2, boastFavorCost:3 },
+  // CONFIG.econ — the single two-verb payoff surface (D-10, EFFECT-04): per-scene-tier
+  // face maps read by econD() to build every Helios beats cell's `d`. tier 0/1/2 = an
+  // episode's 1st/2nd/3rd scene; magnitudes are non-decreasing tier to tier on both
+  // roads — that IS the escalating arc. 03-07 tunes these; this plan only sets the shape.
+  econ: {
+    abideHold:  [ {1:1,3:1,4:2,6:2}, {1:1,3:2,4:2,6:3}, {1:2,3:2,4:3,6:3} ],
+    abideFavor: [ {6:1}, {4:1,6:1}, {4:1,6:2} ],
+    dareStash:  [ {3:1,4:2,6:3}, {3:1,4:3,6:4}, {3:2,4:4,6:6} ],
+    dareCaught: [ {1:-1}, {1:-2,3:-1}, {1:-3,3:-1} ],
+  },
+  // CONFIG.divine — favor→world thresholds (D-05). Doom/bless thresholds scale PER
+  // LIVING CREW MEMBER (the anti-spiral guard confirmed at the Task 3 decision gate):
+  // a shrinking crew never by itself pushes the crew toward doom.
+  divine: {
+    calmPerMate: 3,       // aggregate crew favor per living mate at/above which seas are calm
+    roughStep: 2,         // each `roughStep` of favor deficit below the calm line adds one blue marble
+    maxExtraBlue: 6,      // cap on extra blue marbles salted into a crossing bag
+    doomFloorPerMate: 0,  // aggregate crew favor at/below (doomFloorPerMate * livingCount) triggers collective doom
+    blessFloorPerMate: 4, // aggregate crew favor at/above (blessFloorPerMate * livingCount) triggers the blessing branch
+    doomMaxToll: 2,       // a doom catastrophe never takes more than this many sailors, and never the last living one
+  },
   bot: {
     greedy:   { troyLow:5, troyHigh:6, dareBias:0.72, boast:true,  revealFavor:4, protectsHold:false },
     balanced: { troyLow:3, troyHigh:4, dareBias:0.42, boast:false, revealFavor:99, protectsHold:false },
@@ -259,16 +286,17 @@ const CONFIG = {
 };
 
 /* ---------------------------------------------------------------- BONE TABLES --- */
-// data, not if-chains. verb -> face -> {you, crew, favor, world}
+// data, not if-chains. verb -> face -> {you, crew, favor} — built from econD() at tier 0
+// (D-01/D-02/D-03): the same two-verb payoff surface every scene's beats table draws
+// from. Sea keeps its distinct flavor through verbWord(), not through a different
+// payoff shape (D-11).
 const LAND_TABLE = {
-  dare:  { 1:{you:-1,crew:-1,favor:-1,world:1}, 3:{you:1},          4:{you:2},                6:{you:2,crew:2} },
-  abide: { 1:{},                                3:{you:1},          4:{you:1,crew:1},         6:{you:1,crew:1,favor:1} },
-  give:  { 1:{you:-1},                          3:{you:-1,crew:1},  4:{you:-1,crew:1},        6:{you:-1,crew:1} },
+  dare:  { 1:econD('dare',0,1),  3:econD('dare',0,3),  4:econD('dare',0,4),  6:econD('dare',0,6) },
+  abide: { 1:econD('abide',0,1), 3:econD('abide',0,3), 4:econD('abide',0,4), 6:econD('abide',0,6) },
 };
 const SEA_TABLE = {
-  dare:  { 1:{you:-1,crew:-1,favor:-1},         3:{you:1,crew:-1},  4:{you:2,crew:-1},        6:{you:2,crew:2} },
-  abide: { 1:{},                                3:{you:1},          4:{you:1},                6:{you:2,crew:1} },
-  give:  { 1:{you:-1},                          3:{you:-1,crew:1},  4:{you:-1,crew:1},        6:{you:-1,crew:1} },
+  dare:  { 1:econD('dare',0,1),  3:econD('dare',0,3),  4:econD('dare',0,4),  6:econD('dare',0,6) },
+  abide: { 1:econD('abide',0,1), 3:econD('abide',0,3), 4:econD('abide',0,4), 6:econD('abide',0,6) },
 };
 
 /* ---------------------------------------------------------------- RNG SEAM --- */
@@ -317,8 +345,6 @@ function newState(opts){
     journey:[], beatIndex:0,
     phase:'SETUP_TROY',
     crossing:{ bag:[], whitesAdded:0, atSea:false },
-    world:0,           // current episode track
-    curse:0,           // persistent Poseidon's curse (Boast) → extra blue
     episode:null, ep:{},   // active episode + local flags
     onIsland:false,
     tollSkipNextCrossing:false,
@@ -336,26 +362,79 @@ const deadPl    = () => state.players.filter(p => p.status==='dead');
 const sleep = ms => new Promise(r=>setTimeout(r, ms));
 async function botPause(){ if(state.botSpeed>0) await sleep(state.botSpeed); }
 
+/* ---------------------------------------------------------------- DIVINE ECONOMY --- */
+// econD(verb, tier, face, extra): builds a beats-cell delta from CONFIG.econ, so no cell
+// ever hand-writes a bare number (EFFECT-04, Pitfall 12). Abide → {crew, favor?}; Dare →
+// {you?, favor?}. `extra` is an optional CONFIG-sourced delta a scene merges in for its
+// own thematic kicker (e.g. a climactic Dare-6 bounty that also swells the hold) —
+// `extra`'s own values must themselves come from CONFIG, never be typed as literals here.
+function econD(verb, tier, face, extra){
+  const e = CONFIG.econ;
+  const d = {};
+  if(verb==='abide'){
+    if(e.abideHold[tier] && e.abideHold[tier][face]) d.crew = e.abideHold[tier][face];
+    if(e.abideFavor[tier] && e.abideFavor[tier][face]) d.favor = e.abideFavor[tier][face];
+  } else if(verb==='dare'){
+    if(e.dareStash[tier] && e.dareStash[tier][face]) d.you = e.dareStash[tier][face];
+    if(e.dareCaught[tier] && e.dareCaught[tier][face]) d.favor = e.dareCaught[tier][face];
+  }
+  if(extra){ for(const k in extra){ d[k] = (d[k]||0) + extra[k]; } }
+  return d;
+}
+// crewFavor()/seasExtraBlue()/doomFloor()/blessFloor() (D-05): the single causal chain
+// that turns private transgressions into collective weather and collective doom.
+// Thresholds scale PER LIVING CREW MEMBER (Task 3 decision gate) so a shrinking crew
+// never by itself drives the crew toward catastrophe. None of these call the RNG.
+function crewFavor(){ return livingPl().reduce((s,p)=>s+p.favor,0); }
+function seasExtraBlue(){
+  const lc = livingCount();
+  if(lc===0) return 0;
+  const deficit = (CONFIG.divine.calmPerMate * lc) - crewFavor();
+  if(deficit <= 0) return 0;
+  return Math.min(CONFIG.divine.maxExtraBlue, Math.ceil(deficit / CONFIG.divine.roughStep));
+}
+function doomFloor(){ return CONFIG.divine.doomFloorPerMate * livingCount(); }
+function blessFloor(){ return CONFIG.divine.blessFloorPerMate * livingCount(); }
+// doomToll(reason): the collective-doom catastrophe helper shared by every episode's
+// onDepart doom branch. Caps the toll at CONFIG.divine.doomMaxToll and NEVER takes the
+// last living sailor (D-07/ANCHOR-04) — a wipe of a favor-bankrupt crew is exactly the
+// dead-end this redesign exists to remove. Uses the existing pick()-family RNG seam
+// (already used by onDepart-adjacent helpers like polyphemusHunger/stakeCheck), called
+// synchronously from within the game-logic chain — not a render/click/timer callback.
+function doomToll(reason){
+  const living = livingPl();
+  if(living.length<=1) return [];
+  const maxTake = Math.min(CONFIG.divine.doomMaxToll, living.length-1);
+  const pool = living.slice();
+  const victims=[];
+  for(let i=0;i<maxTake;i++){
+    if(pool.length===0) break;
+    const idx = rint(pool.length);
+    victims.push(pool.splice(idx,1)[0]);
+  }
+  victims.forEach(p=>{ p.status='dead'; p.satchel=0; p.lotusStruck=false; });
+  return victims;
+}
+
+// applyDeltas(p, d): the single mutator for every resolved effect. DELTA_KEYS is
+// enforced as a whitelist BEFORE any mutation — an out-of-vocabulary payoff key throws
+// instead of silently resolving to nothing (Pitfall 10, T-03-01).
 function applyDeltas(p, d){
+  if(d){
+    for(const k in d){
+      if(DELTA_KEYS.indexOf(k)===-1) throw new Error(`applyDeltas: unknown payoff key "${k}" — not in DELTA_KEYS`);
+    }
+  }
   const parts=[];
   if(d.you){ const b=p.satchel; p.satchel=Math.max(0,p.satchel+d.you); const act=p.satchel-b; if(act) parts.push(`${act>0?'+':''}${act}🍖`); }
   if(d.crew){ const b=state.hold; state.hold=Math.max(0,state.hold+d.crew); const act=state.hold-b; if(act) parts.push(`${act>0?'+':''}${act} hold`); }
   if(d.favor){ p.favor+=d.favor; if(state.onIsland) p.islandFavorEarned+=d.favor; parts.push(`${d.favor>0?'+':''}${d.favor}🫒`); }
-  // CR-01: floor state.world at 0, mirroring the you/crew clamps above. Verified safe:
-  // every doom/bless threshold read against state.world (Helios doomAt:7/blessAt:2,
-  // Sirens doomAt:6) is a positive number, worldStart is 0 for every episode, and
-  // Cyclops's boast penalty lives on state.curse, not state.world — nothing in the
-  // codebase depends on state.world going negative. Without this floor, Sirens' Give
-  // cells (bind/plug-ears) could bank an unbounded negative "Rocks" buffer and
-  // neutralize the reef-wreck mechanic (pre-phase-2 sirensReskin().give enforced this
-  // same floor; beats-authored cells dropped it).
-  if(d.world){ const b=state.world; state.world=Math.max(0,state.world+d.world); const act=state.world-b; if(act) parts.push(`${act>0?'+':''}${act} world`); }
   return parts.join(' · ');
 }
 // deltaStakes(d): PURE, read-only formatter of a beats cell's delta object into a compact
-// stakes string — mirrors applyDeltas' emoji vocab (🍖 satchel, 🛢️ hold, 🫒 favor, ☁️ doom)
-// but mutates NOTHING. Used only to PREVIEW per-roll consequences inside the action buttons
-// so a human can choose Dare/Abide/Give informed. (No RNG, no state — masking-safe: the
+// stakes string — mirrors applyDeltas' emoji vocab (🍖 satchel, 🛢️ hold, 🫒 favor) but
+// mutates NOTHING. Used only to PREVIEW per-roll consequences inside the action buttons
+// so a human can choose Dare/Abide informed. (No RNG, no state — masking-safe: the
 // payoff table is public; only the roll itself stays hidden.)
 function deltaStakes(d){
   if(!d) return '';
@@ -363,7 +442,6 @@ function deltaStakes(d){
   if(d.you)   parts.push(`${d.you>0?'+':''}${d.you}🍖`);
   if(d.crew)  parts.push(`${d.crew>0?'+':''}${d.crew}🛢️`);
   if(d.favor) parts.push(`${d.favor>0?'+':''}${d.favor}🫒`);
-  if(d.world) parts.push(`${d.world>0?'+':''}${d.world}☁️`);
   return parts.join(' ');
 }
 // stakesLine(vt, p): the per-face (1/3/4/6) preview for ONE verb's beats table. Merges a
@@ -530,15 +608,20 @@ function renderStrip(){
       + `<div class="small">land next: ${total? white+'-in-'+total : '—'}</div>`;
     s.appendChild(cross);
   }
-  if(state.onIsland && state.episode && state.episode.doomAt!=null){
-    const w = el('div','stat'+(state.world>=state.episode.doomAt?' hold-danger':''));
-    w.innerHTML = `<div class="k">${state.episode.trackName||'World'}</div><div class="v">🌩️ ${state.world}</div><div class="small">doom at ${state.episode.doomAt}</div>`;
-    s.appendChild(w);
-  }
-  if(state.curse>0){
-    const c = el('div','stat'); c.innerHTML=`<div class="k">Poseidon's curse</div><div class="v">🌊 ${state.curse}</div><div class="small">+${CONFIG.worldToExtraBlue(state.curse)} blue / leg</div>`;
-    s.appendChild(c);
-  }
+  // Favor/seas/doom card (D-05, ECON-02): the crew's aggregate standing with the gods —
+  // the single legible axis that replaced the two retired peril tracks. Always visible
+  // (not gated on onIsland/atSea), so "aggregate favor visibly drives the world" is
+  // literally true on the board at every beat, not just island scenes.
+  const lc2 = livingCount();
+  const favor = crewFavor(), df = doomFloor(), bf = blessFloor(), extraBlue = seasExtraBlue();
+  const inDanger = lc2>0 && favor<=df;
+  const blessed = lc2>0 && favor>=bf;
+  const favorCard = el('div','stat'+(inDanger?' hold-danger':''));
+  const seasLine = extraBlue>0 ? `rough (+${extraBlue}🔵/crossing)` : 'calm';
+  const doomLine = inDanger ? 'the gods have turned away — doom' : (blessed ? 'the gods smile — blessing' : `doom at ${df}`);
+  favorCard.innerHTML = `<div class="k">Crew favor with the gods</div><div class="v">🫒 ${favor}</div>`
+    + `<div class="small">seas: ${seasLine} · ${doomLine}</div>`;
+  s.appendChild(favorCard);
 }
 function statusTok(p){
   if(p.status==='dead') return '💀 dead';
@@ -677,7 +760,7 @@ async function askHuman(p, kind, ctx){
   }
   if(kind==='eat'){
     return promptButtons(`${p.name}: where do you eat? <span class="small">(blind — you can't fall back once you reach for the hold)</span>`,
-      `Satchel spends your own 🍖 (${p.satchel} left). Hold spends shared stores (🛢️ ${state.hold}) — but if too many reach, lots are cast and the lowest bone misses the meal.`,
+      `Satchel spends your own 🍖 (${p.satchel} left). Hold spends shared stores (🛢️ ${state.hold}) — but if too many reach, fixed turn order resolves who eats first, and whoever finds it dry last misses the meal.`,
       [ {label:`🍖 Eat my satchel (${p.satchel})`, value:'satchel', disabled:false},
         {label:`🛢️ Reach for the hold`, value:'hold'} ], p.id);
   }
@@ -686,18 +769,14 @@ async function askHuman(p, kind, ctx){
     const lab = sc && sc.verbs ? sc.verbs : null;
     const dL = lab&&lab.dare ? lab.dare.label : (env==='sea'?'Dare — fish a sea monster':'Dare — transgress, grab for yourself');
     const aL = lab&&lab.abide? lab.abide.label: (env==='sea'?'Abide — fish with a rod':'Abide — uphold the law (the favor road)');
-    const gL = lab&&lab.give ? lab.give.label : 'Give — move a 🍖 into the hold';
-    const giveIllegal = p.satchel < 1;
     // Per-roll stakes preview (read from the scene's public beats table) so the choice is informed.
     const bt = sc && sc.beats ? sc.beats : null;
     const dS = bt ? stakesLine(bt.dare, p) : '';
     const aS = bt ? stakesLine(bt.abide, p) : '';
-    const gS = bt ? stakesLine(bt.give, p) : '';
     return promptButtons(`${p.name}: your move`,
       `Committed in secret. All throw bones together, then reveal one by one. <span class="small">Each box shows what every 🎲 face grants.</span>`,
       [ {label:`⚔️ ${dL}${dS}`, value:'dare', cls:'dare'},
-        {label:`🕊️ ${aL}${aS}`, value:'abide', cls:'abide'},
-        {label:`🤲 ${gL}`+(giveIllegal?' (no 🍖)':'')+gS, value:'give', cls:'give', disabled:giveIllegal} ], p.id);
+        {label:`🕊️ ${aL}${aS}`, value:'abide', cls:'abide'} ], p.id);
   }
   if(kind==='pride'){
     return promptButtons(`${p.name}: the escape — do you boast?`,
@@ -774,36 +853,37 @@ function botDecide(p, kind, ctx){
 
 function botAct(p, ctx, T){
   const env = ctx.env, ep = state.episode, sc = ctx.scene, lc = livingCount();
-  const canGive = p.satchel>=1;
   const holdShort = state.hold < lc;
   const hungry = p.satchel<=1 && !(state.hold>lc);
-  const give = ()=> canGive ? 'give' : 'abide';
 
   // ---- episode overrides (respect the scene's shape) ----
+  // NOTE (D-01/D-11): the third verb (Give) is gone — its "feed the commons" function
+  // is now Abide's base effect (D-02), so every branch below that used to pick 'give'
+  // now picks 'abide' instead.
   if(ep){
     if(ep.id==='helios'){
       if(p.temperament==='pious') return 'abide';
-      if(state.hold<=1 && canGive) return 'give';
+      if(state.hold<=1) return 'abide';
       if((hungry || p.temperament==='greedy') && rnd()<T.dareBias+0.15) return 'dare';
       return 'abide';
     }
     if(ep.id==='cyclops'){
-      if(ctx.sceneIndex===0){ // The Wine: get him drunk
-        if(state.hold>=1 && rnd()<0.7) return 'give';   // pour wine
-        return 'abide';                                  // cower
+      if(ctx.sceneIndex===0){ // The Wine: get him drunk (Abide now pours the wine too)
+        return rnd()<0.75 ? 'abide' : 'dare';
       }
       if(ctx.sceneIndex===1){ // The Stake: dare together when drunk
         if(state.ep.drunk >= CONFIG.cyclops.drunkNeeded) return 'dare';
-        if(state.hold>=1 && rnd()<0.5) return 'give';    // more wine
         return 'abide';
       }
       if(ctx.sceneIndex===2){ return 'dare'; }           // slip out under the sheep
     }
     if(ep.id==='sirens'){
+      // INTERIM (03-01): favor-based stand-in for the retired world-anger threshold —
+      // re-authored thematically in 03-03/03-04.
       if(p.temperament==='greedy') return 'dare';         // listen
-      if(state.world>=CONFIG.sirens.doomAt-2 && canGive) return 'give'; // bind, protect
-      if(p.temperament==='pious') return canGive?'give':'abide';
-      return 'abide';
+      if(crewFavor()<=doomFloor()) return 'abide';        // ease the Rocks when favor runs low
+      if(p.temperament==='pious') return 'abide';
+      return rnd()<0.5 ? 'dare' : 'abide';
     }
     if(ep.id==='lotus'){
       // D-04 inverts the usual mapping here: Abide is the risky "give in to the fruit"
@@ -811,10 +891,6 @@ function botAct(p, ctx, T){
       // no longer just scene 2) — so the temperament split below is the mirror image
       // of every other island's lotus/dare-favor-free branches above.
       const struck = state.players.find(x=>x.lotusStruck && notDead(x));
-      // WR-01: the rescue is costless (lotusDareFx only spends a ration if one is
-      // available — it never requires or is blocked by satchel), so the bot's decision
-      // must not be gated on canGive; a balanced bot with an empty satchel should still
-      // take a free rescue instead of falling through to the 50/50 default below.
       if(struck && p.temperament!=='greedy') return 'dare'; // go haul a struck mate back
       if(p.temperament==='greedy') return 'abide';   // give in to the free ration — self first
       if(p.temperament==='pious') return 'dare';     // resist, mind kept on Ithaca
@@ -823,11 +899,11 @@ function botAct(p, ctx, T){
   }
 
   // ---- generic policy ----
-  if(hungry && rnd() < T.dareBias + 0.2) return 'dare';                 // grab / fish to refill
-  if(holdShort && canGive && (T.protectsHold || rnd()<0.4)) return 'give';
+  if(hungry && rnd() < T.dareBias + 0.2) return 'dare';                        // grab / fish to refill
+  if(holdShort && (T.protectsHold || rnd()<0.4)) return 'abide';              // Abide now fills the hold
   if(!holdShort && rnd() < (p.temperament==='pious'?0.7:0.45)) return 'abide'; // favor road
   if(rnd() < T.dareBias) return 'dare';
-  return canGive && rnd()<0.3 ? 'give' : 'abide';
+  return 'abide';
 }
 
 /* ---------------------------------------------------------------- RESOLUTION ORDER SEAM --- */
@@ -1010,8 +1086,7 @@ async function actPhase(env, scene, sceneIndex){
 }
 function verbWord(v, env){
   if(v==='dare') return env==='sea'?'fishes for a monster':'dares';
-  if(v==='abide') return env==='sea'?'fishes with a rod':'abides';
-  return 'gives';
+  return env==='sea'?'fishes with a rod':'abides';
 }
 
 /* ---------------------------------------------------------------- EPISODES --- */
@@ -1022,149 +1097,130 @@ function verbWord(v, env){
 // own beats table — see EPISODES.helios.scenes below.)
 const EPISODES = {
   helios: {
-    id:'helios', title:'Cattle of Helios', trackName:"Helios's Wrath", worldStart:0, doomAt:CONFIG.helios.doomAt,
-    hook:'A meadow of golden cattle, forbidden. The hold is low and Ithaca is close. Every private hunger raises a shared doom.',
+    id:'helios', title:'Cattle of Helios',
+    hook:'A meadow of golden cattle, forbidden. The hold is low and Ithaca is close. Every private transgression costs the crew favor with the gods — and the crew\'s aggregate favor is the ship\'s only shield from the sea.',
+    // TRACER (03-01): Helios is the whole new economy proven end-to-end on ONE island —
+    // every `d` below is built by econD(verb, tier, face[, extra]) from CONFIG.econ, so
+    // no cell here hand-writes a bare number (EFFECT-04, Pitfall 12) and every later
+    // balance retune (03-07) tunes CONFIG.econ only. Abide (D-02) always feeds the hold;
+    // a high roll additionally earns favor. Dare (D-03) always risks the stash; a high
+    // roll is a clean kill unseen, a low roll means the Sun sees you and favor is lost.
+    // Magnitudes are non-decreasing tier 0→1→2 — that IS the escalating arc (D-10).
     scenes:[
       { name:'The Meadow', hook:'The herd gleams. Odysseus warns: touch nothing.',
-        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — restraint (the pious road)'}, give:{label:'Give — feed the hold'}},
-        // D-01 authoring anchor (user's verbatim Helios template, 02-CONTEXT.md
-        // <specifics>): Abide is inert except a 6 (a small forage gain + the Abide-6
-        // favor nod, D-05's default favor path); Dare-6 pays the full bounty (stash +2,
-        // hold +4); Dare-1 is seen by the Sun (world rises only — no positive favor,
-        // ever, on a Helios Dare). Scene 1 of 3 (hunger) — the mildest of the rising arc,
-        // see scenes 2/3 below.
+        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — restraint (the pious road)'}},
         beats: {
           dare: {
-            1:{ d:{world:CONFIG.fx.tiny}, cls:'l-bad',
-                tell:(p)=>`Seen by the Sun — the herd bellows, and Helios's wrath stirs.` },
-            3:{ d:{favor:CONFIG.fx.penalty}, cls:'l-bad',
-                tell:(p)=>`A quiet cut, eaten alone. Helios marks it — condemned, favor lost.` },
-            4:{ d:{you:CONFIG.fx.tiny},
+            1:{ d:econD('dare',0,1), cls:'l-bad',
+                tell:(p)=>`Seen by the Sun — Helios marks it. Favor lost.` },
+            3:{ d:econD('dare',0,3),
                 tell:(p)=>`A clean kill, unseen — stash +1.` },
-            6:{ d:{you:CONFIG.fx.small, crew:CONFIG.fx.big},
-                tell:(p)=>`A clean kill, unseen — stash +2, hold +4.` },
+            4:{ d:econD('dare',0,4),
+                tell:(p)=>`A clean kill, unseen — stash +2.` },
+            6:{ d:econD('dare',0,6),
+                tell:(p)=>`A clean kill, unseen — stash +3.` },
           },
           abide: {
-            1:{ d:{},
-                tell:(p)=>`Look for food, find nothing.` },
-            3:{ d:{},
-                tell:(p)=>`Pat a cow, trying not to see it as food.` },
-            4:{ d:{},
-                tell:(p)=>`Cast a line for fish; find nothing.` },
-            6:{ d:{you:CONFIG.fx.small, favor:CONFIG.fx.tiny}, cls:'l-favor',
-                tell:(p)=>`A patch of dandelions, belly filled — and a quiet nod from the gods.` },
-          },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`A ration goes into the hold, and the giver goes without.` },
-            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`Sharing thins one satchel to thicken the common store.` },
-            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`The hold grows a little heavier for the sacrifice.` },
-            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`Generosity is its own quiet reward.` },
+            1:{ d:econD('abide',0,1),
+                tell:(p)=>`A scrap foraged for the hold, belly still empty.` },
+            3:{ d:econD('abide',0,3),
+                tell:(p)=>`Pat a cow, then turn to the tide-line — a scrap for the hold.` },
+            4:{ d:econD('abide',0,4),
+                tell:(p)=>`A fuller forage — the hold grows.` },
+            6:{ d:econD('abide',0,6), cls:'l-favor',
+                tell:(p)=>`A patch of dandelions for the hold — and a quiet nod from the gods.` },
           },
         } },
       { name:'The Hunger', hook:'Days pass. The rod brings nothing. Bellies growl against the vow.',
-        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — hold out'}, give:{label:'Give — feed the hold'}},
-        // Scene 2 of 3 (temptation) — the Dare high-face bounty escalates past scene 1
-        // (stash +2/hold+4 -> stash +4/hold+6); Abide/Give hold flat (the growing gap
-        // between restraint's flat reward and Dare's rising one IS the temptation).
+        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — hold out'}},
+        // Scene 2 of 3 (temptation) — Dare's stash payoff rises past scene 1; the
+        // growing gap between restraint's flat hold-gift and Dare's rising one IS
+        // the temptation.
         beats: {
           dare: {
-            1:{ d:{world:CONFIG.fx.small}, cls:'l-bad',
-                tell:(p)=>`Seen again — the herd scatters bellowing, and Helios's wrath climbs.` },
-            3:{ d:{favor:CONFIG.fx.penalty}, cls:'l-bad',
-                tell:(p)=>`Another cut, eaten alone. Helios's condemnation deepens.` },
-            4:{ d:{you:CONFIG.fx.small},
-                tell:(p)=>`A bolder kill, unseen — stash +2.` },
-            6:{ d:{you:CONFIG.fx.big, crew:CONFIG.fx.huge},
-                tell:(p)=>`A bolder kill, unseen — stash +4, hold +6.` },
+            1:{ d:econD('dare',1,1), cls:'l-bad',
+                tell:(p)=>`Seen again — Helios's condemnation deepens. Favor lost.` },
+            3:{ d:econD('dare',1,3), cls:'l-bad',
+                tell:(p)=>`A cut, but marked this time — stash +1, favor lost.` },
+            4:{ d:econD('dare',1,4),
+                tell:(p)=>`A bolder kill, unseen — stash +3.` },
+            6:{ d:econD('dare',1,6),
+                tell:(p)=>`A bolder kill, unseen — stash +4.` },
           },
           abide: {
-            1:{ d:{},
-                tell:(p)=>`Hunger gnaws; still nothing to show for it.` },
-            3:{ d:{},
-                tell:(p)=>`Pat a cow again, hands shaking with want.` },
-            4:{ d:{},
-                tell:(p)=>`Cast the line again; the sea gives nothing.` },
-            6:{ d:{you:CONFIG.fx.small, favor:CONFIG.fx.tiny}, cls:'l-favor',
-                tell:(p)=>`Dandelions again, belly filled — and a quiet nod from the gods.` },
-          },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`A ration goes into the hold, and the giver goes hungrier.` },
-            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`Sharing thins one satchel to thicken the common store.` },
-            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`The hold grows heavier for the sacrifice.` },
-            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`Generosity, even now, is its own quiet reward.` },
+            1:{ d:econD('abide',1,1),
+                tell:(p)=>`Hunger gnaws; still, a scrap goes to the hold.` },
+            3:{ d:econD('abide',1,3),
+                tell:(p)=>`Hands shaking with want, the hold grows a little.` },
+            4:{ d:econD('abide',1,4), cls:'l-favor',
+                tell:(p)=>`The sea gives a little more — hold up, and a quiet nod from the gods.` },
+            6:{ d:econD('abide',1,6), cls:'l-favor',
+                tell:(p)=>`Dandelions again for the hold — and a fuller nod from the gods.` },
           },
         } },
       { name:'The Reckoning', hook:'The hides crawl, the spitted meat lows. Helios counts his herd.',
-        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — repent'}, give:{label:'Give — feed the hold'}},
-        // Scene 3 of 3 (doom) — the climactic Dare-6 bounty (stash +6/hold+6, non-
-        // decreasing vs. scene 2's +4/+6) against the sharpest Dare-1 wrath spike.
+        verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — repent'}},
+        // Scene 3 of 3 (climax) — the Dare-6 bounty is now a clean kill so bold it also
+        // swells the hold (econD's `extra`), against the sharpest Dare-1/3 favor loss.
         beats: {
           dare: {
-            1:{ d:{world:CONFIG.fx.big}, cls:'l-bad',
-                tell:(p)=>`Seen a third time — the herd screams to the heavens, and Helios's wrath spikes.` },
-            3:{ d:{favor:CONFIG.fx.penalty}, cls:'l-bad',
-                tell:(p)=>`One more cut, eaten alone. Helios's condemnation is absolute.` },
-            4:{ d:{you:CONFIG.fx.big},
+            1:{ d:econD('dare',2,1), cls:'l-bad',
+                tell:(p)=>`Seen a third time — Helios's condemnation is absolute. Favor lost.` },
+            3:{ d:econD('dare',2,3), cls:'l-bad',
+                tell:(p)=>`One more cut, marked — stash +2, favor lost.` },
+            4:{ d:econD('dare',2,4),
                 tell:(p)=>`A reckless kill, unseen — stash +4.` },
-            6:{ d:{you:CONFIG.fx.huge, crew:CONFIG.fx.huge},
-                tell:(p)=>`A reckless kill, unseen — stash +6, hold +6.` },
+            6:{ d:econD('dare',2,6,{crew:CONFIG.fx.huge}),
+                tell:(p)=>`A reckless kill so bold it feeds the whole ship — stash +6, hold +6.` },
           },
           abide: {
-            1:{ d:{},
-                tell:(p)=>`The vow holds even now; the belly stays empty.` },
-            3:{ d:{},
-                tell:(p)=>`Pat a cow one last time, starving and resolute.` },
-            4:{ d:{},
-                tell:(p)=>`Cast the line one last time; the sea stays silent.` },
-            6:{ d:{you:CONFIG.fx.small, favor:CONFIG.fx.tiny}, cls:'l-favor',
-                tell:(p)=>`Dandelions at the last hour, belly filled — and a quiet nod from the gods.` },
-          },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`A ration goes into the hold, and the giver starves a little more.` },
-            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`Sharing thins one satchel to thicken the common store.` },
-            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`The hold grows heavier still for the sacrifice.` },
-            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
-                tell:(p)=>`Generosity, to the end, is its own quiet reward.` },
+            1:{ d:econD('abide',2,1),
+                tell:(p)=>`The vow holds even now; a scrap still reaches the hold.` },
+            3:{ d:econD('abide',2,3), cls:'l-favor',
+                tell:(p)=>`Starving and resolute, the hold grows — and a quiet nod from the gods.` },
+            4:{ d:econD('abide',2,4), cls:'l-favor',
+                tell:(p)=>`The sea gives at the last hour — hold up, and a fuller nod from the gods.` },
+            6:{ d:econD('abide',2,6), cls:'l-favor',
+                tell:(p)=>`Dandelions at the last hour for the hold — and the richest nod of all.` },
           },
         } },
     ],
+    // D-05: favor is the crew's standing with the gods AND the world's mood. Three
+    // branches, same shape as before: catastrophe / blessing / simmering escape — but
+    // now read off crewFavor() against doomFloor()/blessFloor() (per-living-mate
+    // thresholds, T-03-03) instead of the retired world track. The catastrophe is
+    // capped via doomToll() and never takes the last living sailor (D-07/ANCHOR-04).
     onDepart(){
-      if(state.world >= this.doomAt){
-        log(`☀️ Helios's Wrath hits ${state.world}. As the ship departs, the sea rises and swallows it — everyone drowns.`,'l-die');
-        livingPl().forEach(p=>{ p.status='dead'; p.satchel=0; p.lotusStruck=false; });
+      const favor = crewFavor(), df = doomFloor(), bf = blessFloor();
+      if(favor <= df){
+        const victims = doomToll('helios');
+        const named = victims.length ? victims.map(v=>v.name).join(', ') : null;
+        log(`☀️ The crew's favor with the gods (${favor}) has sunk to the wrath-line. As the ship departs, the sea rises${named?` and swallows ${named}`:''} — Helios's fury is spent.`,'l-die');
         flavor('All who still carry favor may pay Charon and wash ashore.');
-      } else if(state.world <= CONFIG.helios.blessAt){
-        log(`☀️ The herd stayed nearly whole (wrath ${state.world}). Helios blesses restraint — +${CONFIG.helios.restraintBless}🫒 to all living.`,'l-favor');
+      } else if(favor >= bf){
+        log(`☀️ The herd stayed nearly whole — the crew's favor (${favor}) shines bright. Helios blesses restraint — +${CONFIG.helios.restraintBless}🫒 to all living.`,'l-favor');
         livingPl().forEach(p=>{ p.favor+=CONFIG.helios.restraintBless; if(state.onIsland)p.islandFavorEarned+=CONFIG.helios.restraintBless; });
       } else {
-        log(`☀️ The ship escapes Thrinacia — Helios simmers (wrath ${state.world}) but holds his hand.`,'l-sys');
+        log(`☀️ The ship escapes Thrinacia — the crew's favor (${favor}) holds the gods' hand steady.`,'l-sys');
       }
     }
   },
 
+  // INTERIM (03-01): Cyclops is mechanically converted to two verbs + one currency so
+  // it doesn't trip the validator/econcheck — thematic re-authoring (the escalating arc,
+  // hand-tuned CONFIG.econ payoffs) lands in a later plan (03-03/03-04), not here.
+  // Give's function (pour wine → drunk++, IN-01's hold-debit exception) is folded into
+  // Abide, whose own inert cells contributed nothing — so this is a straight fold, not a
+  // merge. The drunk-counter fx is load-bearing (the Stake scene's threshold reads it)
+  // and is carried over unchanged.
   cyclops: {
-    id:'cyclops', title:'The Cyclops', trackName:'Escape', worldStart:0, doomAt:null, need:CONFIG.cyclops.need,
+    id:'cyclops', title:'The Cyclops', need:CONFIG.cyclops.need,
     hook:'Trapped in the cave, a boulder across the mouth. Polyphemus feeds on the idle. Only wine and cunning open the way.',
     scenes:[
       { name:'The Wine', hook:'The giant sprawls. Odysseus offers a skin of dark wine.',
-        verbs:{dare:{label:'Dare — attack him sober (needs a 6)'}, abide:{label:'Abide — cower unseen'}, give:{label:'Give — pour wine (make him drunk)'}},
-        // Stateful-scene conversion (EFFECT-04 escape hatch): give/dare-6 use the `fx`
-        // hatch to mutate state.ep.drunk/progress — genuine extra state a flat `d`
-        // can't express — while narration (`tell`) and any expressible delta (`d`)
-        // still live in the same cell. Behavior-preserving vs. the old reskin closures.
+        verbs:{dare:{label:'Dare — attack him sober (needs a 6)'}, abide:{label:'Abide — pour wine (make him drunk)'}},
         beats: {
-          give: {
+          abide: {
             1:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
                 tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
             3:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
@@ -1173,12 +1229,6 @@ const EPISODES = {
                 tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
             6:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
                 tell:(p)=>`Wine sloshes into a wooden cup — Polyphemus grows drunker (drunk ${state.ep.drunk}/${CONFIG.cyclops.drunkNeeded}).` },
-          },
-          abide: {
-            1:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
-            3:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
-            4:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
-            6:{ d:{}, tell:(p)=>`Best to stay hidden while the giant still has his wits.` },
           },
           dare: {
             1:{ d:{you:CONFIG.fx.penalty}, tell:(p)=>`A blind lunge at a wide-awake monster — folly, and it costs a ration.` },
@@ -1191,13 +1241,7 @@ const EPISODES = {
         collectiveCheck(){ polyphemusHunger(state.ep.drunk>state.ep._drunkBefore || state.ep.progress>state.ep._progBefore); }
       },
       { name:'The Stake', hook:'With the giant snoring drunk, the crew heaves the glowing stake.',
-        verbs:{dare:{label:'Dare — drive the stake home'}, abide:{label:'Abide — brace the stake'}, give:{label:'Give — pour more wine'}},
-        // Stateful-scene conversion (EFFECT-04 escape hatch), mirroring scene 1's
-        // pattern. The per-player beats cells narrate each sailor's individual heave/
-        // brace/pour; the collective outcome (blind him or not, escape progress, the
-        // favor law) stays entirely inside stakeCheck() via the unchanged
-        // collectiveCheck seam below — no per-cell delta here decides whether the
-        // stake actually drives home.
+        verbs:{dare:{label:'Dare — drive the stake home'}, abide:{label:'Abide — pour more wine'}},
         beats: {
           dare: {
             1:{ d:{you:CONFIG.fx.penalty}, cls:'l-bad',
@@ -1210,19 +1254,6 @@ const EPISODES = {
                 tell:(p)=>`Your grip is true, driving hardest of anyone on the shaft.` },
           },
           abide: {
-            1:{ d:{}, tell:(p)=>`You steady the far end and nothing more — safer that way.` },
-            3:{ d:{}, tell:(p)=>`You brace the stake against the ground, adding no push of your own.` },
-            4:{ d:{}, tell:(p)=>`You hold the base level, watching the others do the work.` },
-            6:{ d:{}, tell:(p)=>`You keep the stake from rolling — steady hands, no risk taken.` },
-          },
-          // IN-01: intentional exception to the general Give law (Give sustains the
-          // crew/hold, never moves favor) — same as the Wine scene above, Cyclops
-          // models "wine" as ship stores being spent, not rations pooled, so Give here
-          // debits the hold instead of crediting it. This is deliberate and faithfully
-          // reproduces the pre-phase-2 reskin behavior — not a template to copy to any
-          // other island's Give cells (mirrors the flagged Sirens Dare-favor exception
-          // above in the collective-Dare comment block).
-          give: {
             1:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
                 tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
             3:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
@@ -1236,12 +1267,9 @@ const EPISODES = {
         collectiveCheck(actors){ stakeCheck(actors); }
       },
       { name:'Under the Sheep', hook:'Blinded, he gropes. Cling to the wool and slip past — then the sea, and the terrible temptation to be known.',
-        verbs:{dare:{label:'Dare — slip out under the wool'}, abide:{label:'Abide — wait, cling tight'}, give:{label:'Give — steady a mate'}},
-        // Individual escape (D-02 scene 3): no collectiveCheck here — each sailor's
-        // own Dare roll decides their own fate via the fx hatch on state.ep.progress.
-        // Faces 3 and 4 (each 40% weight) are the primary escape triggers, not the
-        // rare 1/6 faces (Pitfall 11); face 1 costs the attempt and a scrap of
-        // ration, face 6 is a clean escape with a little extra luck. No favor grant
+        verbs:{dare:{label:'Dare — slip out under the wool'}, abide:{label:'Abide — steady a mate'}},
+        // Individual escape (no collectiveCheck here — each sailor's own Dare roll
+        // decides their own fate via the fx hatch on state.ep.progress). No favor grant
         // anywhere in this scene (D-05 — Cyclops rewards survival, never favor).
         beats: {
           dare: {
@@ -1255,12 +1283,6 @@ const EPISODES = {
                 tell:(p)=>`A perfect slip, and your hand closes on a stray wineskin on the way past — escape ${state.ep.progress}/${state.episode.need}.` },
           },
           abide: {
-            1:{ d:{}, tell:(p)=>`You cling tighter to the wool, letting the others go first.` },
-            3:{ d:{}, tell:(p)=>`You hold your place under the ram, waiting your turn.` },
-            4:{ d:{}, tell:(p)=>`You wait, steady, for a clearer moment.` },
-            6:{ d:{}, tell:(p)=>`You hold fast — safe, but no nearer the door.` },
-          },
-          give: {
             1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
                 tell:(p)=>`You brace a mate's ram from behind, a scrap of your own ration lost in the scramble.` },
             3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
@@ -1273,9 +1295,10 @@ const EPISODES = {
         },
       },
     ],
-    // D-05: Cyclops is an intentional no-favor island (survival/pride, not piety).
-    // The boast grants NO favor — pride is punished with Poseidon's curse (world-
-    // anger) only. Do not re-add a favor grant on the boast branch below.
+    // D-05: Cyclops is an intentional no-favor island (survival/pride, not piety). The
+    // boast now costs the boaster's OWN favor (folded from the retired curse track)
+    // instead of feeding a persistent world curse. Do not re-add a favor GRANT on the
+    // boast branch below — the cost stands.
     async prideSubCommit(){
       const survivors = actingPl();
       if(survivors.length===0) return;
@@ -1284,8 +1307,8 @@ const EPISODES = {
       await collectCommits(survivors, 'pride', {});
       for(const p of survivors){
         if(p.commit==='dare'){
-          state.curse += CONFIG.boastCurse;
-          log(`📣 ${p.name} BOASTS "It was Odysseus!" — glory, and nothing else. Poseidon's curse deepens to ${state.curse}; every future crossing will be longer and hungrier.`,'l-bad');
+          p.favor -= CONFIG.cyclops.boastFavorCost;
+          log(`📣 ${p.name} BOASTS "It was Odysseus!" — glory, and nothing else. The gods take note: favor −${CONFIG.cyclops.boastFavorCost} (→ ${p.favor}).`,'l-bad');
         } else {
           log(`🤐 ${p.name} holds their tongue.`,'l-sys');
         }
@@ -1301,148 +1324,125 @@ const EPISODES = {
     }
   },
 
+  // INTERIM (03-01): Sirens is mechanically converted to two verbs + one currency.
+  // Every retired `world` cost/gain below is folded directly into `favor` (a payoff
+  // that used to anger the world becomes favor lost by the actor; one that used to
+  // appease it becomes favor gained) — the two numbers are simply summed since favor
+  // is now the only currency. This uniformly worsens Dare in the later scenes (net
+  // favor goes negative even on some high faces) — that is a KNOWN, ACCEPTED artifact
+  // of the interim mechanical fold, not a design decision. 03-03/03-04 re-author Sirens
+  // thematically on CONFIG.econ, and the sanctioned Dare-favor exception (D-05) is
+  // restored there on purpose. Give (binding/plugging a mate) folds into Abide, whose
+  // own cells contributed nothing before — a straight fold, not a merge.
   sirens: {
-    id:'sirens', title:'The Sirens', trackName:'The Rocks', worldStart:0, doomAt:CONFIG.sirens.doomAt,
+    id:'sirens', title:'The Sirens',
     hook:'A song of all knowledge drifts over the water. To hear it is glory; to steer toward it is death on the reef.',
-    // D-03/D-05: Sirens is the ONE SANCTIONED Dare-favor exception in the whole game.
-    // Every other island's Dare grants NO favor (Cyclops, Helios, Lotus are all
-    // reconciled off it) — here, and only here, Dare (unstopping your ears to hear
-    // the song) pays real kleos via CONFIG.sirens.listenFavor[face], because daring
-    // the Sirens' song IS the myth's whole point: the gods reward the boldness of
-    // hearing what kills lesser men. The cost is real too — every listen raises the
-    // Rocks (state.world) via CONFIG.sirens.worldPerListen, and the worst face (1,
-    // which pays zero favor) is a wreck risk: extra world-anger via
-    // CONFIG.sirens.wreckWorldExtra and, from Scene 2 on, a crew cost via
-    // CONFIG.sirens.wreckCrew as the lure grows physical. Abide (bound to the mast)
-    // is deliberately NOT the default favor path here — it inverts the general D-05
-    // law on purpose: safe and thin, no gain, because the disciplined choice is to
-    // hear nothing at all. Give (binding/plugging a mate) pushes the Rocks back at a
-    // small satchel cost and never moves favor, per the general law. DO NOT copy the
-    // Dare-favor grant to any other island — Plan 05's favor-law audit checks that
-    // Sirens remains the only exception.
     scenes:[
       { name:'The First Notes', hook:'Sweet and far. Wax in hand, rope on the mast.',
-        verbs:{dare:{label:'Dare — unstop your ears and listen'}, abide:{label:'Abide — be bound to the mast'}, give:{label:'Give — bind/stopper a mate'}},
-        // Scene 1 of 3 (distant song, mildest of the rising arc, D-09). Dare pays
-        // CONFIG.sirens.listenFavor[face] kleos (the flagged D-05 exception above) and
-        // raises the Rocks by CONFIG.sirens.worldPerListen; face 1 (zero favor) is
-        // already a wreck risk, raising the Rocks further still.
+        verbs:{dare:{label:'Dare — unstop your ears and listen'}, abide:{label:'Abide — bind/stopper a mate'}},
         beats: {
           dare: {
-            1:{ d:{world:CONFIG.sirens.worldPerListen+CONFIG.sirens.wreckWorldExtra}, cls:'l-bad',
-                tell:(p)=>`Ears unstopped for a heartbeat — only a snatch of melody drifts by. No glory in it, and the ship edges nearer the Rocks.` },
-            3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen}, cls:'l-favor',
-                tell:(p)=>`A few clear notes reach you — kleos worth having, and the Rocks creep closer.` },
-            4:{ d:{favor:CONFIG.sirens.listenFavor[4], world:CONFIG.sirens.worldPerListen}, cls:'l-favor',
-                tell:(p)=>`The song carries further than it should — good glory for the listening, the Rocks edge nearer still.` },
-            6:{ d:{favor:CONFIG.sirens.listenFavor[6], world:CONFIG.sirens.worldPerListen}, cls:'l-favor',
-                tell:(p)=>`Every word lands whole and true — rich kleos for the risk, and the Rocks answer in kind.` },
+            1:{ d:{favor:-(CONFIG.sirens.worldPerListen+CONFIG.sirens.wreckWorldExtra)}, cls:'l-bad',
+                tell:(p)=>`Ears unstopped for a heartbeat — only a snatch of melody drifts by. No glory in it, and the gods take note of the risk.` },
+            3:{ d:{favor:CONFIG.sirens.listenFavor[3]-CONFIG.sirens.worldPerListen}, cls:'l-bad',
+                tell:(p)=>`A few clear notes reach you — kleos, but the Rocks nearer cost more favor than the glory was worth.` },
+            4:{ d:{},
+                tell:(p)=>`The song carries further than it should — glory and risk cancel out even.` },
+            6:{ d:{favor:CONFIG.sirens.listenFavor[6]-CONFIG.sirens.worldPerListen}, cls:'l-favor',
+                tell:(p)=>`Every word lands whole and true — rich kleos outweighs the risk.` },
           },
           abide: {
-            1:{ d:{}, tell:(p)=>`Wax in your ears, rope at your wrists — the song is only a murmur you'll never hear.` },
-            3:{ d:{}, tell:(p)=>`Bound tight to the mast, you strain against the ropes and hear nothing.` },
-            4:{ d:{}, tell:(p)=>`The wax holds. Whatever they're singing, it isn't for you.` },
-            6:{ d:{}, tell:(p)=>`Lashed fast, eyes forward — safe, and none the wiser for it.` },
-          },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`You knot a mate's bonds a little tighter — the Rocks ease back.` },
-            3:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`A firm hand on a mate's wax and rope — the Rocks recede.` },
-            4:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`You check a mate's bonds are sound — the Rocks fall back a little.` },
-            6:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`Steady hands, a mate made safe — the Rocks recede further.` },
+            1:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`You knot a mate's bonds a little tighter — the gods take gentle notice.` },
+            3:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`A firm hand on a mate's wax and rope — a quiet favor gained.` },
+            4:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`You check a mate's bonds are sound — a quiet favor gained.` },
+            6:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`Steady hands, a mate made safe — favor gained.` },
           },
         } },
       { name:'The Full Song', hook:'It swells — names, wars, the future. The ship leans toward the voices.',
-        verbs:{dare:{label:'Dare — listen deeper'}, abide:{label:'Abide — stay bound'}, give:{label:'Give — plug a mate\'s ears'}},
-        // Scene 2 of 3 (the pull strengthens) — Dare's world cost rises
-        // (worldPerListen + CONFIG.fx.tiny); face 1's wreck risk now also costs the
-        // crew (hold) via CONFIG.sirens.wreckCrew — the lure has grown physical, not
-        // just world-anger.
+        verbs:{dare:{label:'Dare — listen deeper'}, abide:{label:'Abide — plug a mate\'s ears'}},
         beats: {
           dare: {
-            // WR-03: the world/doom penalty lives in `alwaysD` (not `d`) so it lands
+            // WR-03: the merged favor penalty lives in `alwaysD` (not `d`) so it lands
             // even when the hold can't cover the `crew` draw in `d` — otherwise
             // canAffordDraw's deny-whole-cell invariant (WR-05, correct for `d` itself)
-            // would let an empty hold silently void the Rocks penalty too, making the
-            // worst face SAFER exactly when the ship is most precarious.
-            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny+CONFIG.sirens.wreckWorldExtra}, cls:'l-bad',
-                tell:(p)=>`The song swells and pulls you under its spell — no glory in it, only the Rocks rising and a mate's grip torn loose.` },
-            3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny}, cls:'l-favor',
-                tell:(p)=>`Names, wars, the shape of your own fate — worth the hearing, though the ship leans harder toward the voices.` },
-            4:{ d:{favor:CONFIG.sirens.listenFavor[4], world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny}, cls:'l-favor',
-                tell:(p)=>`Whole verses now, secrets no living man should know — rich kleos, and the Rocks loom larger.` },
-            6:{ d:{favor:CONFIG.sirens.listenFavor[6], world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny}, cls:'l-favor',
-                tell:(p)=>`Every word cuts clean and true — glory beyond measure, and the ship leans hardest yet.` },
+            // would let an empty hold silently void the favor cost too.
+            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{favor:-(CONFIG.sirens.worldPerListen+CONFIG.fx.tiny+CONFIG.sirens.wreckWorldExtra)}, cls:'l-bad',
+                tell:(p)=>`The song swells and pulls you under its spell — no glory in it, only a mate's grip torn loose and the gods' patience thinning.` },
+            3:{ d:{favor:CONFIG.sirens.listenFavor[3]-(CONFIG.sirens.worldPerListen+CONFIG.fx.tiny)}, cls:'l-bad',
+                tell:(p)=>`Names, wars, the shape of your own fate — worth the hearing, though it costs more favor than it earns.` },
+            4:{ d:{favor:CONFIG.sirens.listenFavor[4]-(CONFIG.sirens.worldPerListen+CONFIG.fx.tiny)}, cls:'l-bad',
+                tell:(p)=>`Whole verses now, secrets no living man should know — rich kleos, still a net loss of favor.` },
+            6:{ d:{},
+                tell:(p)=>`Every word cuts clean and true — glory and risk balance out even.` },
           },
           abide: {
-            1:{ d:{}, tell:(p)=>`The ropes bite harder as you strain toward the voices — still nothing gets through.` },
-            3:{ d:{}, tell:(p)=>`You grip the mast and shut your eyes — the song swells, and passes you by.` },
-            4:{ d:{}, tell:(p)=>`Wax and rope hold fast against the swelling chorus.` },
-            6:{ d:{}, tell:(p)=>`You endure, white-knuckled and deaf to it all — safe, still thin.` },
-          },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`You press fresh wax into a straining mate's ears — the Rocks ease back.` },
-            3:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`You lean on the ropes, holding a thrashing mate steady — the Rocks recede.` },
-            4:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`You plug a mate's ears against the swelling song — the Rocks fall back.` },
-            6:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`A mate saved from the worst of it — the Rocks recede further still.` },
+            1:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`You press fresh wax into a straining mate's ears — the gods take gentle notice.` },
+            3:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`You lean on the ropes, holding a thrashing mate steady — a quiet favor gained.` },
+            4:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`You plug a mate's ears against the swelling song — a quiet favor gained.` },
+            6:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`A mate saved from the worst of it — favor gained.` },
           },
         } },
       { name:'The Reef', hook:'White water ahead. The song at its height.',
-        verbs:{dare:{label:'Dare — one last listen'}, abide:{label:'Abide — endure'}, give:{label:'Give — haul on the oar'}},
-        // Scene 3 of 3 (the rocks) — the climax. Dare's world cost peaks
-        // (worldPerListen + CONFIG.fx.small); face 1's wreck risk is now at its worst
-        // (that world cost plus wreckWorldExtra, plus the same crew cost) — this is
-        // the face most likely to push state.world to CONFIG.sirens.doomAt and
-        // trigger the existing reef-wreck onDepart path below.
+        verbs:{dare:{label:'Dare — one last listen'}, abide:{label:'Abide — haul on the oar'}},
         beats: {
           dare: {
-            // WR-03: world/doom penalty in `alwaysD` — see Scene 2's identical note.
-            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.small+CONFIG.sirens.wreckWorldExtra}, cls:'l-bad',
-                tell:(p)=>`One last listen, too close to the white water — a mate loses their hold and the Rocks rush nearer still.` },
-            3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen+CONFIG.fx.small}, cls:'l-favor',
-                tell:(p)=>`Even now, even here, the song is worth the hearing — kleos at the very height of danger.` },
-            4:{ d:{favor:CONFIG.sirens.listenFavor[4], world:CONFIG.sirens.worldPerListen+CONFIG.fx.small}, cls:'l-favor',
-                tell:(p)=>`The full song, unbearably close — glory to last a lifetime, and the Rocks nearer than ever.` },
-            6:{ d:{favor:CONFIG.sirens.listenFavor[6], world:CONFIG.sirens.worldPerListen+CONFIG.fx.small}, cls:'l-favor',
-                tell:(p)=>`You hear it whole, at the reef's very edge — the richest kleos of the whole voyage.` },
+            // WR-03: merged favor penalty in `alwaysD` — see Scene 2's identical note.
+            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{favor:-(CONFIG.sirens.worldPerListen+CONFIG.fx.small+CONFIG.sirens.wreckWorldExtra)}, cls:'l-bad',
+                tell:(p)=>`One last listen, too close to the white water — a mate loses their hold and the gods turn away.` },
+            3:{ d:{favor:CONFIG.sirens.listenFavor[3]-(CONFIG.sirens.worldPerListen+CONFIG.fx.small)}, cls:'l-bad',
+                tell:(p)=>`Even now, even here, the song is worth the hearing — but it costs more favor than it earns.` },
+            4:{ d:{favor:CONFIG.sirens.listenFavor[4]-(CONFIG.sirens.worldPerListen+CONFIG.fx.small)}, cls:'l-bad',
+                tell:(p)=>`The full song, unbearably close — glory to last a lifetime, still a net loss of favor.` },
+            6:{ d:{favor:CONFIG.sirens.listenFavor[6]-(CONFIG.sirens.worldPerListen+CONFIG.fx.small)}, cls:'l-bad',
+                tell:(p)=>`You hear it whole, at the reef's very edge — the richest kleos of the voyage, still not enough to offset the risk.` },
           },
           abide: {
-            1:{ d:{}, tell:(p)=>`You endure, lashed to the mast as the reef roars past.` },
-            3:{ d:{}, tell:(p)=>`You hold fast through the worst of it, deaf and unmoved.` },
-            4:{ d:{}, tell:(p)=>`The ropes hold. So do you.` },
-            6:{ d:{}, tell:(p)=>`Safe to the last note — thin comfort, but comfort all the same.` },
-          },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`You haul on the oar with everyone else, dragging the ship from the Rocks.` },
-            3:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`You throw your weight against the oar — the Rocks recede.` },
-            4:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`Every stroke matters now — the Rocks fall back.` },
-            6:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
-                tell:(p)=>`A clean, powerful stroke — the Rocks recede furthest of all.` },
+            1:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`You haul on the oar with everyone else, dragging the ship from the Rocks — the gods take gentle notice.` },
+            3:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`You throw your weight against the oar — a quiet favor gained.` },
+            4:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`Every stroke matters now — a quiet favor gained.` },
+            6:{ d:{you:CONFIG.fx.penalty, favor:CONFIG.sirens.bindReduce},
+                tell:(p)=>`A clean, powerful stroke — favor gained.` },
           },
         } },
     ],
+    // D-05/T-03-03: same shape as Helios — read crewFavor() against doomFloor(), and
+    // never wipe the whole crew even when the reef claims its due.
     onDepart(){
-      if(state.world >= this.doomAt){
-        log(`🪨 The Rocks reach ${state.world} — the ship grinds onto the reef. The sea takes its due.`,'l-die');
-        livingPl().forEach(p=>{ p.lastBone=throwBone(); if(p.lastBone===1){ p.status='dead'; p.satchel=0; log(`💀 ${p.name} 🎲1 — pulled under.`,'l-die'); } });
+      const favor = crewFavor(), df = doomFloor();
+      if(favor <= df){
+        log(`🪨 The crew's favor with the gods (${favor}) has sunk to the reef-line — the ship grinds onto the Rocks. The sea takes its due.`,'l-die');
+        livingPl().forEach(p=>{
+          if(livingCount()<=1) return; // never take the last living sailor (D-07/ANCHOR-04)
+          p.lastBone=throwBone();
+          if(p.lastBone===1){ p.status='dead'; p.satchel=0; log(`💀 ${p.name} 🎲1 — pulled under.`,'l-die'); }
+        });
       } else {
         log(`🎶 The song fades astern. The listeners keep their glorious knowledge (and favor).`,'l-favor');
       }
     }
   },
 
+  // INTERIM (03-01): Lotus is mechanically converted to two verbs + one currency. Give
+  // (share a ration, feed the hold) is folded ADDITIVELY into Abide's existing cells —
+  // NOT a straight replacement, since Abide already carries load-bearing D-04 behavior
+  // (the lotus-struck fx). Abide's own `d`/`fx` (the free-ration gain / struck flag) are
+  // preserved verbatim; Give's `you`/`crew` deltas are merged into the same cell so
+  // Abide's hold contribution IS now part of its base effect too (D-02's general rule,
+  // applied even to this interim island). Dare (hauling back) is untouched — it never
+  // referenced world/curse and already declares only in-vocabulary keys.
   lotus: {
-    id:'lotus', title:'The Lotus-Eaters', trackName:'', worldStart:0, doomAt:null,
+    id:'lotus', title:'The Lotus-Eaters',
     hook:'A gentle shore. The natives offer honey-sweet fruit. One taste and home stops mattering.',
     // D-04/D-05: Lotus INVERTS the general Dare/Abide asymmetry on purpose. Everywhere
     // else, Abide is the safe/inert road and Dare is the risky one. Here, Abide (giving
@@ -1453,20 +1453,19 @@ const EPISODES = {
     // move — safe, but pays NO favor (D-05: this retunes the third shipped Dare-favor
     // violation; dragging the crew back is survival, not piety). Abide-6 is the ONLY
     // favor path on this island (resisting the fruit entirely, keeping Ithaca in mind).
-    // Give shares a ration with the hold, as everywhere else, and never moves favor.
     scenes:[
       { name:'The Offering', hook:'The lotus is pressed into every hand.',
-        verbs:{dare:{label:'Dare — haul yourself (or a struck mate) back to the ship'}, abide:{label:'Abide — take the fruit that\'s offered'}, give:{label:'Give — share your ration'}},
+        verbs:{dare:{label:'Dare — haul yourself (or a struck mate) back to the ship'}, abide:{label:'Abide — take the fruit that\'s offered'}},
         beats: {
           abide: {
-            1:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(0), cls:'l-bad',
-                tell:(p)=>`You take the fruit without thinking — sweet, cloying, and the world goes soft at the edges. <b>The lotus takes you: lotus-struck.</b>` },
-            3:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(0),
-                tell:(p)=>`A bite, out of politeness more than hunger. It goes down easy and fills your belly.` },
-            4:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(0),
-                tell:(p)=>`You eat without really deciding to. Pleasant. Forgettable.` },
-            6:{ d:{favor:CONFIG.fx.tiny}, fx:lotusAbideFx(0), cls:'l-favor',
-                tell:(p)=>`You look at the fruit a long moment, then set it down. Ithaca stays sharp in your mind.` },
+            1:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0), cls:'l-bad',
+                tell:(p)=>`You take the fruit without thinking — sweet, cloying, and the world goes soft at the edges. <b>The lotus takes you: lotus-struck.</b> A scrap still reaches the hold.` },
+            3:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0),
+                tell:(p)=>`A bite, out of politeness more than hunger. It goes down easy and fills your belly, with a scrap left for the hold.` },
+            4:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0),
+                tell:(p)=>`You eat without really deciding to. Pleasant. Forgettable. A scrap still reaches the hold.` },
+            6:{ d:{favor:CONFIG.fx.tiny, you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0), cls:'l-favor',
+                tell:(p)=>`You look at the fruit a long moment, then set it down and press a scrap into the hold instead. Ithaca stays sharp in your mind.` },
           },
           dare: {
             1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'grimly, dragging your own feet through the sand') },
@@ -1474,25 +1473,19 @@ const EPISODES = {
             4:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'steady, keeping the ship in sight the whole way') },
             6:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'clean and sure-footed, no hesitation at all') },
           },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You press your own ration into a mate's hands instead — into the hold it goes.` },
-            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You share what little you've got. The hold is better for it.` },
-            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`No sense hoarding on a shore like this — your ration goes to the hold.` },
-            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You give freely, thinking of the whole crew and not just yourself.` },
-          },
         } },
       { name:'Going Back', hook:'Some sailors sit smiling in the sand, forgetting the ship. Will anyone haul them out?',
-        verbs:{dare:{label:'Dare — go back for a struck mate'}, abide:{label:'Abide — take another bite'}, give:{label:'Give — share your ration'}},
+        verbs:{dare:{label:'Dare — go back for a struck mate'}, abide:{label:'Abide — take another bite'}},
         beats: {
           abide: {
-            1:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(1), cls:'l-bad',
-                tell:(p)=>`You settle into the sand beside the others — just for a moment, you tell yourself. <b>Lotus-struck.</b>` },
-            3:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(1), cls:'l-bad',
-                tell:(p)=>`One more bite, to be sociable — and the shore tilts gently under you. <b>Lotus-struck.</b>` },
-            4:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(1),
-                tell:(p)=>`You eat, but keep half an eye on the tide line — this one goes down without taking hold.` },
-            6:{ d:{favor:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-favor',
-                tell:(p)=>`The fruit's sweetness turns to ash in your mouth. You think of home, and it's enough.` },
+            1:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-bad',
+                tell:(p)=>`You settle into the sand beside the others — just for a moment, you tell yourself. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
+            3:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-bad',
+                tell:(p)=>`One more bite, to be sociable — and the shore tilts gently under you. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
+            4:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1),
+                tell:(p)=>`You eat, but keep half an eye on the tide line — this one goes down without taking hold, and a scrap reaches the hold.` },
+            6:{ d:{favor:CONFIG.fx.tiny, you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-favor',
+                tell:(p)=>`The fruit's sweetness turns to ash in your mouth. You think of home, and press a scrap into the hold instead.` },
           },
           dare: {
             1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'stumbling, the sand pulling at every step') },
@@ -1500,37 +1493,25 @@ const EPISODES = {
             4:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'firm-handed, no time to waste') },
             6:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'without a second thought, already turning for the ship') },
           },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You go without, so the hold has a little more in it.` },
-            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Your ration joins the hold — one less mouth to worry over later.` },
-            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You'd rather the hold be full than your own belly.` },
-            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Easy giving, and the hold is stronger for it.` },
-          },
         } },
       { name:'Cast Off', hook:'The tide turns. The oars are manned. Whoever is still ashore will be left.',
-        verbs:{dare:{label:'Dare — one last rescue run'}, abide:{label:'Abide — linger on the sand'}, give:{label:'Give — share your ration'}},
+        verbs:{dare:{label:'Dare — one last rescue run'}, abide:{label:'Abide — linger on the sand'}},
         beats: {
           abide: {
-            1:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(2), cls:'l-bad',
-                tell:(p)=>`The oars are already dipping and still you reach for the fruit. <b>Lotus-struck.</b>` },
-            3:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(2), cls:'l-bad',
-                tell:(p)=>`You mean to rise, you really do — but your hand finds the fruit first. <b>Lotus-struck.</b>` },
-            4:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(2), cls:'l-bad',
-                tell:(p)=>`One last taste, you think, and the shore closes gently over you. <b>Lotus-struck.</b>` },
-            6:{ d:{favor:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-favor',
-                tell:(p)=>`Even now, with the oars creaking, you set the fruit down and walk to the boat.` },
+            1:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`The oars are already dipping and still you reach for the fruit. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
+            3:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`You mean to rise, you really do — but your hand finds the fruit first. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
+            4:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`One last taste, you think, and the shore closes gently over you. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
+            6:{ d:{favor:CONFIG.fx.tiny, you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-favor',
+                tell:(p)=>`Even now, with the oars creaking, you set the fruit down, press a scrap into the hold, and walk to the boat.` },
           },
           dare: {
             1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'nearly too late, the tide already tugging at your knees') },
             3:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'racing the last of the daylight') },
             4:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'hard and fast, no room left for hesitation') },
             6:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'in one clean motion, straight for the oars') },
-          },
-          give: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You empty your satchel into the hold before you take your oar.` },
-            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Whatever you've got left goes to the hold, not your belly.` },
-            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Your last ration, given up gladly, joins the hold.` },
-            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`A final, generous share — the hold is ready for the crossing.` },
           },
         } },
     ],
@@ -1598,10 +1579,12 @@ function stakeCheck(actors){
 
 /* ---------------------------------------------------------------- VALIDATION --- */
 // validateBeats() enforces beats-table completeness for every scene that opts into the
-// beats path: any declared beats verb must define all four bone faces {1,3,4,6}, and
-// each defined cell must be well-formed (a `tell` function + a `d` object). A broken
-// cell fails LOUD (console.error + on-screen l-bad log + throw) rather than silently
-// falling through to `{}` (closes Pitfall 10 — see .planning/research/PITFALLS.md).
+// beats path: a declared scene must use EXACTLY the verbs in VERBS (D-01/ECON-01), any
+// declared verb must define all four bone faces {1,3,4,6}, each defined cell must be
+// well-formed (a `tell` function + a `d` object), and every cell's `d`/`alwaysD` keys
+// must be inside DELTA_KEYS (ECON-02) — an out-of-vocabulary payoff key fails LOUD
+// (console.error + on-screen l-bad log + throw) rather than silently resolving to
+// nothing (closes Pitfall 10 — see .planning/research/PITFALLS.md).
 // A scene with no `beats` field at all is NOT a failure — it is a legitimate,
 // not-yet-converted scene still served by the reskin/LAND_TABLE/SEA_TABLE fallback.
 function validateBeats(){
@@ -1610,6 +1593,11 @@ function validateBeats(){
   Object.values(EPISODES).forEach(ep=>{
     ep.scenes.forEach(sc=>{
       if(!sc.beats){ notYetConverted.push(`${ep.id} / ${sc.name}`); return; }
+      const verbsDeclared = Object.keys(sc.beats).slice().sort();
+      const verbsExpected = VERBS.slice().sort();
+      if(verbsDeclared.length !== verbsExpected.length || !verbsDeclared.every((v,i)=>v===verbsExpected[i])){
+        problems.push(`${ep.id} / ${sc.name}: declares verbs [${verbsDeclared.join(',')}], expected exactly [${verbsExpected.join(',')}]`);
+      }
       Object.keys(sc.beats).forEach(verb=>{
         const table = sc.beats[verb];
         [1,3,4,6].forEach(face=>{
@@ -1621,7 +1609,14 @@ function validateBeats(){
           const wellFormed = typeof cell.tell === 'function' && cell.d && typeof cell.d === 'object';
           if(!wellFormed){
             problems.push(`${ep.id} / ${sc.name} / ${verb} / face ${face}: dead cell (needs a tell function and a d object)`);
+            return;
           }
+          [['d',cell.d],['alwaysD',cell.alwaysD]].forEach(([label,obj])=>{
+            if(!obj) return;
+            Object.keys(obj).forEach(k=>{
+              if(DELTA_KEYS.indexOf(k)===-1) problems.push(`${ep.id} / ${sc.name} / ${verb} / face ${face}: ${label} key "${k}" not in DELTA_KEYS`);
+            });
+          });
         });
       });
     });
@@ -1642,13 +1637,15 @@ function startCrossing(){
   const bag=[];
   for(let i=0;i<CONFIG.crossing.blueStart;i++) bag.push('blue');
   for(let i=0;i<CONFIG.crossing.whiteStart;i++) bag.push('white');
-  const extra = CONFIG.worldToExtraBlue(state.curse);
+  // D-05: low aggregate crew favor salts the bag toward blue — the world's mood made
+  // literal (ECON-02). Replaces the retired curse→extra-blue mapping.
+  const extra = seasExtraBlue();
   for(let i=0;i<extra;i++) bag.push('blue');
   // _lastDrawn (BOARD-07 board-only transient): which marble color the reducer just
   // pulled, set by drawMarble() immediately before the render that should show it, and
   // cleared at the top of the next drawMarble() call — never read/written by renderBag().
   state.crossing = { bag, whitesAdded:0, atSea:true, _lastDrawn:null };
-  if(extra>0) log(`Poseidon's curse salts the bag with ${extra} extra blue — a longer, hungrier leg.`,'l-bad');
+  if(extra>0) log(`The crew's favor with the gods runs low — the crossing bag is salted with ${extra} extra blue: a longer, hungrier leg.`,'l-bad');
 }
 function drawMarble(firstDraw){
   state.crossing._lastDrawn = null; // clear the previous draw's flourish before this one
@@ -1687,7 +1684,7 @@ async function runCrossing(){
 async function runIsland(beat){
   const ep = beat.episode;
   beat.revealed = true;
-  state.episode = ep; state.world = ep.worldStart||0; state.onIsland = true;
+  state.episode = ep; state.onIsland = true;
   state.ep = { drunk:0, progress:0 };
   state.players.forEach(p=>p.islandFavorEarned=0);
   logBeat(`🏝️ ${ep.title}`);
@@ -1707,7 +1704,7 @@ async function runIsland(beat){
     await botPause();
   }
   if(ep.onDepart) ep.onDepart.call(ep);
-  state.onIsland=false; state.episode=null; state.world=0;
+  state.onIsland=false; state.episode=null;
   render();
 }
 

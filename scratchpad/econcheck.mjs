@@ -62,6 +62,33 @@ function loadScriptBody() {
 // Strip line comments, block comments and string/template literals so only LIVE
 // identifier references survive the scan (a prose mention in a comment or a `tell`
 // sentence must never fail the build).
+// stripComments(src): removes // and /* */ comments ONLY — string/template literal
+// CONTENTS are left completely intact (this pass is used to find a live quoted 'give'
+// string used as an actual value in code, which must NOT be blanked the way comment
+// prose is).
+function stripComments(src) {
+  let out = '';
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i], c2 = src[i + 1];
+    if (c === '/' && c2 === '/') { while (i < n && src[i] !== '\n') i++; continue; }
+    if (c === '/' && c2 === '*') { i += 2; while (i < n && !(src[i] === '*' && src[i + 1] === '/')) i++; i += 2; continue; }
+    if (c === '"' || c === "'" || c === '`') {
+      const quote = c; const start = i; i++;
+      while (i < n && src[i] !== quote) { if (src[i] === '\\') i++; i++; }
+      i++; // consume closing quote
+      out += src.slice(start, i); // keep the string literal verbatim
+      continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+// stripCommentsAndStrings(src): comments AND string/template literal CONTENTS blanked —
+// used for the exact-identifier checks (state.world, worldToExtraBlue, etc.) so a prose
+// `tell()` sentence that happens to mention a retired name in flavor text never fails
+// the build (Pitfall 10's whole point: only LIVE code can fail this gate).
 function stripCommentsAndStrings(src) {
   let out = '';
   let i = 0;
@@ -86,20 +113,27 @@ const RETIRED = ['state.world', 'state.curse', '.world', 'd.world', 'worldToExtr
 
 function sourceScan(scriptBody) {
   const stripped = stripCommentsAndStrings(scriptBody);
+  const commentsOnlyStripped = stripComments(scriptBody);
   const failures = [];
   for (const ident of RETIRED) {
-    if (stripped.includes(ident)) {
+    // Word-boundary match (not a raw substring match): `.world` must NOT trip on a
+    // legitimate identifier like `.worldPerListen` or `.worldStart` — only an exact
+    // `.world` property access (end-of-identifier immediately after "world").
+    const re = new RegExp(ident.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+    if (re.test(stripped)) {
       failures.push(`retired identifier still live in source: "${ident}"`);
     }
   }
-  // retired verb key `give`: as an object key (give:), a quoted string ('give'/"give" —
-  // already stripped above so check separately against the RAW source for quoted forms),
-  // or a property access (.give).
+  // retired verb key `give`: as an object key (give:) or a property access (.give) —
+  // checked against the comments+strings-stripped source (these never legitimately
+  // appear inside narrative string content).
   if (/\bgive\s*:/.test(stripped)) failures.push('retired verb key still live as an object key: "give:"');
   if (/\.give\b/.test(stripped)) failures.push('retired verb key still live as a property access: ".give"');
-  // quoted 'give' / "give" — check the RAW (unstripped) source for actual string literals,
-  // since stripCommentsAndStrings already removed string contents above.
-  if (/['"]give['"]/.test(scriptBody)) failures.push('retired verb key still live as a quoted string: \'give\'/"give"');
+  // quoted 'give' / "give" as an actual VALUE in live code (e.g. verb==='give') — checked
+  // against the comments-ONLY-stripped source (string literals preserved), so a comment
+  // that merely mentions 'give' in prose can never trip this, but a real `==='give'`
+  // comparison still does.
+  if (/['"]give['"]/.test(commentsOnlyStripped)) failures.push('retired verb key still live as a quoted string: \'give\'/"give"');
   return failures;
 }
 
