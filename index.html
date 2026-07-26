@@ -1066,6 +1066,9 @@ const EPISODES = {
         },
       },
     ],
+    // D-05: Cyclops is an intentional no-favor island (survival/pride, not piety).
+    // The boast grants NO favor — pride is punished with Poseidon's curse (world-
+    // anger) only. Do not re-add a favor grant on the boast branch below.
     async prideSubCommit(){
       const survivors = actingPl();
       if(survivors.length===0) return;
@@ -1074,9 +1077,8 @@ const EPISODES = {
       await collectCommits(survivors, 'pride', {});
       for(const p of survivors){
         if(p.commit==='dare'){
-          p.favor+=3; if(state.onIsland)p.islandFavorEarned+=3;
           state.curse += CONFIG.boastCurse;
-          log(`📣 ${p.name} BOASTS "It was Odysseus!" — +3🫒 kleos now, but Poseidon's curse deepens to ${state.curse}. Every future crossing will be longer and hungrier.`,'l-bad');
+          log(`📣 ${p.name} BOASTS "It was Odysseus!" — glory, and nothing else. Poseidon's curse deepens to ${state.curse}; every future crossing will be longer and hungrier.`,'l-bad');
         } else {
           log(`🤐 ${p.name} holds their tongue.`,'l-sys');
         }
@@ -1167,6 +1169,9 @@ function polyphemusHunger(progressed){
       victim.status='dead'; victim.satchel=0; }
   }
 }
+// D-05: Cyclops is an intentional no-favor island (survival/pride, not piety). The
+// collective blinding rewards escape progress only — no favor to darers. Do not
+// re-add a favor grant on the success branch below.
 function stakeCheck(actors){
   const darers = actors.filter(p=>p.commit==='dare');
   if(darers.length===0){ log(`No one drives the stake — the moment passes.`,'l-sys'); polyphemusHunger(false); return; }
@@ -1179,8 +1184,7 @@ function stakeCheck(actors){
   const threshold = Math.max(1, CONFIG.cyclops.stakeThreshold - Math.floor(state.ep.drunk/2));
   if(highs >= threshold){
     state.ep.progress += 2;
-    log(`🔥 The stake drives home! (${highs} high faces vs threshold ${threshold}) — Polyphemus is BLINDED. Escape ${state.ep.progress}/${state.episode.need}. +2🫒 to each darer.`,'l-good');
-    darers.forEach(p=>{ p.favor+=2; if(state.onIsland)p.islandFavorEarned+=2; });
+    log(`🔥 The stake drives home! (${highs} high faces vs threshold ${threshold}) — Polyphemus is BLINDED. Escape ${state.ep.progress}/${state.episode.need}.`,'l-good');
   } else {
     log(`The stake glances off (${highs} high faces vs threshold ${threshold}). He stirs but sleeps on.`,'l-sys');
   }
