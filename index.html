@@ -992,22 +992,77 @@ const EPISODES = {
       },
       { name:'The Stake', hook:'With the giant snoring drunk, the crew heaves the glowing stake.',
         verbs:{dare:{label:'Dare — drive the stake home'}, abide:{label:'Abide — brace the stake'}, give:{label:'Give — pour more wine'}},
-        reskin:{
-          give:(p,b)=>{
-            if(!canAffordDraw({crew:-1})){ log(`${p.name} reaches for more wine, but the hold is empty — denied, nothing to pour.`,'l-bad'); return 'denied — hold empty'; }
-            state.hold--; state.ep.drunk++; log(`${p.name} keeps him under with more wine (drunk ${state.ep.drunk}).`,'l-sys'); return 'drunk +1';
+        // Stateful-scene conversion (EFFECT-04 escape hatch), mirroring scene 1's
+        // pattern. The per-player beats cells narrate each sailor's individual heave/
+        // brace/pour; the collective outcome (blind him or not, escape progress, the
+        // favor law) stays entirely inside stakeCheck() via the unchanged
+        // collectiveCheck seam below — no per-cell delta here decides whether the
+        // stake actually drives home.
+        beats: {
+          dare: {
+            1:{ d:{you:CONFIG.fx.penalty}, cls:'l-bad',
+                tell:(p)=>`The stake bucks in your grip — a scald, a stumble, a scrap of ration lost in the dark.` },
+            3:{ d:{},
+                tell:(p)=>`You lean into the shaft with the others, straining against the weight.` },
+            4:{ d:{},
+                tell:(p)=>`A solid heave — the point bites deeper into the coals.` },
+            6:{ d:{},
+                tell:(p)=>`Your grip is true, driving hardest of anyone on the shaft.` },
           },
-          abide:(p,b)=>{ log(`${p.name} braces the stake 🎲${b}.`,'l-sys'); return 'braced'; },
-          dare:(p,b)=>{ log(`${p.name} drives the stake 🎲${b}.`,'l-act'); return `bone ${b}`; },
+          abide: {
+            1:{ d:{}, tell:(p)=>`You steady the far end and nothing more — safer that way.` },
+            3:{ d:{}, tell:(p)=>`You brace the stake against the ground, adding no push of your own.` },
+            4:{ d:{}, tell:(p)=>`You hold the base level, watching the others do the work.` },
+            6:{ d:{}, tell:(p)=>`You keep the stake from rolling — steady hands, no risk taken.` },
+          },
+          give: {
+            1:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
+            3:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
+            4:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
+            6:{ d:{crew:CONFIG.fx.penalty}, fx:(p,b)=>{ state.ep.drunk++; },
+                tell:(p)=>`One more skin poured into the giant's cup — he sinks deeper (drunk ${state.ep.drunk}).` },
+          },
         },
         collectiveCheck(actors){ stakeCheck(actors); }
       },
       { name:'Under the Sheep', hook:'Blinded, he gropes. Cling to the wool and slip past — then the sea, and the terrible temptation to be known.',
         verbs:{dare:{label:'Dare — slip out under the wool'}, abide:{label:'Abide — wait, cling tight'}, give:{label:'Give — steady a mate'}},
-        reskin:{
-          dare:(p,b)=>{ state.ep.progress++; log(`${p.name} slips out under a ram 🎲${b} → escape ${state.ep.progress}/${state.episode.need}.`,'l-good'); return 'progress +1'; },
-          abide:(p,b)=>{ log(`${p.name} clings and waits 🎲${b}.`,'l-sys'); return 'safe'; },
-          give:(p,b)=>{ if(p.satchel>0){p.satchel--; state.hold++;} log(`${p.name} steadies a mate 🎲${b}.`,'l-sys'); return 'helped'; },
+        // Individual escape (D-02 scene 3): no collectiveCheck here — each sailor's
+        // own Dare roll decides their own fate via the fx hatch on state.ep.progress.
+        // Faces 3 and 4 (each 40% weight) are the primary escape triggers, not the
+        // rare 1/6 faces (Pitfall 11); face 1 costs the attempt and a scrap of
+        // ration, face 6 is a clean escape with a little extra luck. No favor grant
+        // anywhere in this scene (D-05 — Cyclops rewards survival, never favor).
+        beats: {
+          dare: {
+            1:{ d:{you:CONFIG.fx.penalty}, cls:'l-bad',
+                tell:(p)=>`A hoof catches your ribs and Polyphemus's fingers brush your back — you scramble for cover, no closer to free.` },
+            3:{ d:{}, fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`You slip out under the ram's belly, breath held — escape ${state.ep.progress}/${state.episode.need}.` },
+            4:{ d:{}, fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`Clean and quiet, you're through the boulder's gap — escape ${state.ep.progress}/${state.episode.need}.` },
+            6:{ d:{you:CONFIG.fx.tiny}, fx:(p,b)=>{ state.ep.progress++; },
+                tell:(p)=>`A perfect slip, and your hand closes on a stray wineskin on the way past — escape ${state.ep.progress}/${state.episode.need}.` },
+          },
+          abide: {
+            1:{ d:{}, tell:(p)=>`You cling tighter to the wool, letting the others go first.` },
+            3:{ d:{}, tell:(p)=>`You hold your place under the ram, waiting your turn.` },
+            4:{ d:{}, tell:(p)=>`You wait, steady, for a clearer moment.` },
+            6:{ d:{}, tell:(p)=>`You hold fast — safe, but no nearer the door.` },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`You brace a mate's ram from behind, a scrap of your own ration lost in the scramble.` },
+            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`You steady a stumbling mate's grip, giving up a little of your own store.` },
+            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`A shoulder under a mate's ram, your own share thinner for it.` },
+            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
+                tell:(p)=>`You guide a struggling mate clear, sacrificing gladly.` },
+          },
         },
       },
     ],
