@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 2
 current_phase_name: Themed Island Content & Favor-Law Reconciliation
 status: executing
-stopped_at: Completed 02-03-PLAN.md
-last_updated: "2026-07-26T04:22:42.807Z"
+stopped_at: Completed 02-04-PLAN.md (Lotus)
+last_updated: "2026-07-26T04:35:16.856Z"
 last_activity: 2026-07-25
 last_activity_desc: Phase 2 execution started
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 2 (Themed Island Content & Favor-Law Reconciliation) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-07-25 — Phase 2 execution started
 
-Progress: [███████░░░] 71%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [███████░░░] 71%
 | Phase 02 P01 | 15min | 2 tasks | 2 files |
 | Phase 02 P02 | ~20min | 2 tasks | 1 files |
 | Phase 02 P03 | 25min | 1 tasks | 1 files |
+| Phase 02 P04 | ~15min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,7 @@ Recent decisions affecting current work:
 - [Phase ?]: Sirens Dare face 1 (zero favor) is the wreck-risk locus: extra world-anger in all three scenes plus a direct hold cost from Scene 2 onward, escalating the lure from mystical to physical.
 - [Phase ?]: Sirens Abide grants zero favor on all faces across all three scenes — a deliberate, documented departure from the general Abide-6-favor default (D-05), since the disciplined choice here should pay nothing.
 - [Phase ?]: Retired sirensReskin() entirely; all three Sirens scenes now resolve via beats with the Dare-favor grant flagged in-data as the single sanctioned D-05 exception.
+- [Phase ?]: Lotus Abide/Dare semantics inverted per D-04 (Abide=risky eat-the-lotus, Dare=safe haul-back); third and final shipped Dare-favor violation closed (D-05)
 
 ### Pending Todos
 
@@ -110,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T04:22:42.802Z
-Stopped at: Completed 02-03-PLAN.md
+Last session: 2026-07-26T04:35:16.851Z
+Stopped at: Completed 02-04-PLAN.md (Lotus)
 Resume file: None
