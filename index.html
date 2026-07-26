@@ -41,11 +41,13 @@
   .grow{flex:1 1 auto}
 
   /* voyage track */
-  .track{display:flex; gap:6px; flex-wrap:wrap; align-items:stretch}
-  .beat{flex:1 1 90px; min-width:78px; text-align:center; padding:8px 4px; border-radius:9px; border:1px solid var(--line); background:var(--bg2); font-size:.8rem; color:var(--dim)}
+  #boardTrack{overflow-x:auto; padding-bottom:2px}
+  .track{display:flex; gap:6px; flex-wrap:nowrap; align-items:stretch; min-width:min-content}
+  .beat{position:relative; flex:1 1 90px; min-width:78px; text-align:center; padding:8px 4px; border-radius:9px; border:1px solid var(--line); background:var(--bg2); font-size:.8rem; color:var(--dim)}
   .beat .ic{font-size:1.3rem; display:block; line-height:1.2}
   .beat.cur{border-color:var(--gold); background:#1d3350; color:var(--ink); box-shadow:0 0 0 1px var(--gold) inset}
   .beat.done{opacity:.6}
+  .beat .boat{position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:1.15rem; line-height:1; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
 
   /* status strip */
   .strip{display:flex; gap:12px; flex-wrap:wrap}
@@ -129,7 +131,7 @@
 
   <!-- GAME -->
   <div id="game" class="hidden">
-    <div class="card">
+    <div class="card" id="boardTrack">
       <div class="track" id="track"></div>
     </div>
     <div class="card">
@@ -385,7 +387,14 @@ const BEATS_META = [
   {ic:'💀', nm:'Hades'}, {ic:'🏝️', nm:'Island 3'}, {ic:'🏝️', nm:'Island 4'},
   {ic:'🏛️', nm:'Phaeacia'}, {ic:'🏰', nm:'Ithaca'},
 ];
-function render(){ renderTrack(); renderStrip(); renderPlayers(); }
+// renderBoard() — the board orchestrator (BOARD-07 pure projection): called from the
+// existing render() at every post-mutation call site (actPhase/eatPhase/runCrossing/
+// runIsland/runGame). It composes the board's sub-renderers; every value below is read
+// fresh from `state` on each call — no parallel/cached position or status field is ever
+// introduced. Later plans (marble bag / dice / narration / action bar) hang their own
+// render<X>() off this same seam.
+function renderBoard(){ renderTrack(); renderStrip(); renderPlayers(); }
+function render(){ renderBoard(); }
 
 function renderTrack(){
   const t = $('track'); t.innerHTML='';
@@ -394,7 +403,10 @@ function renderTrack(){
     const d = el('div','beat'+(i===state.beatIndex?' cur':'')+(i<state.beatIndex?' done':''));
     let label = m.nm, ic = m.ic;
     if(b.type==='island'){ label = b.revealed ? b.episode.title : 'Island ?'; ic = b.revealed ? '🏝️' : '🎴'; }
-    d.innerHTML = `<span class="ic">${ic}</span>${label}`;
+    // ⛵ boat marker: derived ONLY from state.beatIndex every render — no board-local
+    // position variable is stored anywhere (BOARD-07/09).
+    const boat = i===state.beatIndex ? '<span class="boat">⛵</span>' : '';
+    d.innerHTML = `${boat}<span class="ic">${ic}</span>${label}`;
     t.appendChild(d);
   });
 }
