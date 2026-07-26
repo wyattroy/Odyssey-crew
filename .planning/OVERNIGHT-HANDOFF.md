@@ -50,6 +50,37 @@ The code-fixer subagent briefly fast-forwarded the top-level `main` branch by mi
 - All 4 islands (Helios/Cyclops/Sirens/Lotus) × 3 scenes on beats, full face coverage. Favor-law reconciled: **Sirens the only (flagged) Dare-favor**; Cyclops-boast→curse, Lotus→survival. `validateBeats` ok; determinism intact; CONFIG-sourced numbers (no bare integers).
 - Deferred to you: WR-02 (see "NEEDS YOU").
 
-### ▶ Tonight's next target: Phase 4 (Interactive Board) — pulling it forward
-**Rationale:** Phase 3 (anchors + balance) needs your creative direction + balance-target sign-off (see "NEEDS YOU"), so I'm not auto-authoring it. Phase 4 (the board) is your explicit request #2, is pure engineering I can fully build AND visually verify myself via Chrome screenshots, and per the roadmap it depends only on Phase 1 (not Phases 2-3) — so it's the ideal autonomous work. The board is a pure projection of state, so it will render the Phase-3 anchor content automatically once you direct that later.
-- Status: starting plan-phase 4 (will generate a UI-SPEC; I'll use clean, functional defaults and screenshot them for your review).
+### ✅ Phase 4 — Interactive Board — COMPLETE (built + verified overnight)
+Pulled forward (it depends only on Phase 1 and is pure engineering I can fully build + verify via Chrome). UI-SPEC → plan (4 tracer-first plans) → execute (4 waves) → code (all 9 BOARD reqs) → verified in a real browser incl. a live click-test → marked complete (2026-07-26).
+- **The board now replaces the log as the primary surface:** an 8-node voyage track with an advancing ⛵ boat, the SHIP'S HOLD commons with a live "can't feed everyone" warning, episode doom tracks (Helios's Wrath / The Rocks), a draining blue/white marble bag + pip dice during crossings, clickable Dare/Abide/Give (+ eat) buttons hosted on each acting player's card, an on-board narration surface, and the ship's log demoted to a collapsible `<details>` (auto-opens in director mode).
+- **Verified:** 12/12-seed harness completion, `?seed=` byte-identical, no rng in any render/click, blind-commit masking intact (only the acting human shows buttons; bots masked), single self-contained `index.html`. I click-tested it: "Take 3" at Troy set P1 satchel 3/favor 4 and advanced the game — real commit path, no bot/human fork.
+- **See it yourself:** serve the worktree and open the board (I left a server on :8777, but it may have stopped — restart with the command in "How to run it" below):
+  `http://localhost:8777/index.html?seed=demo&humans=1`  (1-human game — you play P1, click the board buttons)
+  `http://localhost:8777/index.html?seed=iota&auto=1&humans=0&speed=550`  (watch the bots play it out)
+- Minor polish noted (not a gap): the marble bag is on-screen only briefly (crossings resolve in 1–2 draws). A small post-crossing hold would make it linger — trivial follow-up if you want it.
+
+---
+
+## ⏭ THE ONE REMAINING PHASE — Phase 3 (Anchor Verb Retrofit & Balance Retune)
+This is the only unfinished v1.1 phase, and I intentionally left it for you because both halves need YOUR input (details in "NEEDS YOU" above):
+- **Anchors** (Hades/Phaeacia/Ithaca) — creative content like the islands; I have little direction. Run `/gsd-discuss-phase 3`.
+- **Balance retune** — data is in (38% death-spiral; tension currently inverted — abide dominates). I can iterate the numbers via `scratchpad/sweep.mjs` once you approve the target + direction. Also fold in the **WR-02** escalation decision here.
+
+## How to run it (restart the local server if needed)
+```
+cd /Users/wyattroy/Documents/Projects/Odyssey-crew/.claude/worktrees/gsd-new-milestone-acf812
+python3 -m http.server 8777
+```
+Then open the URLs above. (Or just double-click `index.html` — the game is offline single-file; only the MCP browser tooling needed the http server.)
+
+## Git state (all v1.1 work is on the branch, main untouched)
+- Branch `claude/gsd-new-milestone-acf812` (worktree) holds everything. `main` is still v1.0 (`b8f5ccc`) — **merge when you're happy.**
+- Dev-only tools live in `scratchpad/` (harness.mjs = headless completion check; sweep.mjs = balance stats) — never shipped; the game stays one `index.html`.
+
+## Scorecard
+| Phase | Status |
+|-------|--------|
+| 1 Effect Engine & Sequential Resolution | ✅ complete + verified |
+| 2 Themed Island Content & Favor-Law | ✅ complete + verified (browser + harness) |
+| 3 Anchor Retrofit & Balance Retune | ⏳ **awaits you** (creative + balance) |
+| 4 Interactive Board | ✅ complete + verified (browser click-test) |
