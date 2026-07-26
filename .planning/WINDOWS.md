@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 1
+open_count: 0
 waived_count: 0
-fixed_count: 0
+fixed_count: 1
 total_count: 1
-last_updated: 2026-07-26T19:33:55.978Z
+last_updated: 2026-07-26T21:29:26.096Z
 ---
 
 # Broken Windows Ledger
@@ -15,7 +15,7 @@ last_updated: 2026-07-26T19:33:55.978Z
 
 | id | phase | kind | file | line | description | status | reason | recorded_at | resolved_at |
 |----|-------|------|------|------|-------------|--------|--------|-------------|-------------|
-| 1 | 03 | unmet-truth | index.html |  | sweep.mjs 40 all-dead rate is 18% (7/40) after 03-02, not lower than 03-01's 0% baseline (an artifact of the old engine's silent permanent population culling) — flagged for 03-07 balance retune (see 03-02-SUMMARY.md Deviations) | open |  | 2026-07-26T19:33:55.978Z |  |
+| 1 | 03 | unmet-truth | index.html |  | sweep.mjs 40 all-dead rate is 18% (7/40) after 03-02, not lower than 03-01's 0% baseline (an artifact of the old engine's silent permanent population culling) — flagged for 03-07 balance retune (see 03-02-SUMMARY.md Deviations) | fixed |  | 2026-07-26T19:33:55.978Z | 2026-07-26T21:29:26.096Z |
 
 ````json
 [
@@ -26,10 +26,10 @@ last_updated: 2026-07-26T19:33:55.978Z
     "file": "index.html",
     "line": null,
     "description": "sweep.mjs 40 all-dead rate is 18% (7/40) after 03-02, not lower than 03-01's 0% baseline (an artifact of the old engine's silent permanent population culling) — flagged for 03-07 balance retune (see 03-02-SUMMARY.md Deviations)",
-    "status": "open",
+    "status": "fixed",
     "reason": "",
     "recorded_at": "2026-07-26T19:33:55.978Z",
-    "resolved_at": null
+    "resolved_at": "2026-07-26T21:29:26.096Z"
   }
 ]
 ````

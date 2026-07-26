@@ -48,7 +48,7 @@
 ### Balance (effects-as-balance retune + death-spiral fix)
 
 - [x] **BALANCE-01**: The hand-tuned per-stage `beats` deltas replace the default death-spiral `[tune]` constants as the game's intended economy (designer-tuned, playtest-driven — no simulation harness this pass).
-- [ ] **BALANCE-02**: A fixed multi-seed 0-human auto sweep is the acceptance bar: across the seed set, most games reach Ithaca with *some* crew alive, the hold/rations economy stays under real pressure (neither mass starvation nor trivial survival), and the run always terminates at a winner.
+- [x] **BALANCE-02**: A fixed multi-seed 0-human auto sweep is the acceptance bar: across the seed set, most games reach Ithaca with *some* crew alive, the hold/rations economy stays under real pressure (neither mass starvation nor trivial survival), and the run always terminates at a winner.
 - [x] **BALANCE-03**: Cross-episode favor reconciliation confirms favor stays *contested* — cooperation (favor) remains the optimal path to *winning* while defection remains optimal only for *bare survival*; favor is neither dominated nor trivially maxed.
 
 ### Economy & Verb Redesign (Phase 3 — emerged during discuss-phase 3; see 03-CONTEXT.md)
@@ -128,7 +128,7 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | ANCHOR-03 | Phase 3 | Complete |
 | ANCHOR-04 | Phase 3 | Complete |
 | BALANCE-01 | Phase 3 | Complete |
-| BALANCE-02 | Phase 3 | Pending |
+| BALANCE-02 | Phase 3 | Complete |
 | BALANCE-03 | Phase 3 | Complete |
 | ECON-01 | Phase 3 | Complete |
 | ECON-02 | Phase 3 | Complete |

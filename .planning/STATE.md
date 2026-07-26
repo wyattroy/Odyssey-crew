@@ -4,16 +4,16 @@ milestone: v1.1
 milestone_name: Themed Episodes & Interactive Board
 current_phase: 03
 current_phase_name: anchor-verb-retrofit-balance-retune
-status: executing
-stopped_at: Completed 03-06-PLAN.md (Ithaca's finale retrofitted onto the two-verb grammar)
-last_updated: "2026-07-26T20:53:09.590Z"
+status: verifying
+stopped_at: Completed 03-07-PLAN.md (balance retune + PROJECT.md truth-up — phase 3 functionally complete)
+last_updated: "2026-07-26T21:32:33.615Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
 ---
 
 # Project State
@@ -29,10 +29,10 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 
 Phase: 03 (anchor-verb-retrofit-balance-retune) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-07-26 — Phase 03 execution started
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Progress: [█████████░] 94%
 | Phase 03 P04 | 50min | 2 tasks | 1 files |
 | Phase 03 P05 | 65 | 2 tasks | 1 files |
 | Phase 03 P06 | 55min | 2 tasks | 2 files |
+| Phase 03 P07 | 37min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -125,6 +126,8 @@ Recent decisions affecting current work:
 - [Phase ?]: Ithaca's homecoming reward scales by homecomingPerMate * livingCount() (not flat) — full-crew supremacy is literal arithmetic; lands strictly after the pot split so it never gates eligibility/qualification/the pot
 - [Phase ?]: Anchor bot policy (Hades/Phaeacia/Ithaca) is now keyed on scene-object identity against ANCHORS.<id>.scenes, not ep.id, since state.episode stays null throughout every anchor's own verb scene
 - [Phase ?]: 03-06: zero-qualifier bow-floor fallback proven correct via a constructed probe (forced low favor) but does not fire naturally in the current pre-03-07 economy — carried forward as balance-tuning evidence, not a defect
+- [Phase ?]: Phase 3 balance retune (03-07): tuned holdStart/charon.toll/econ.abideHold/econ.dareCaught/divine.doomFloorPerMate together — sweep.mjs 80/200 --assert now PASS (0% all-dead, 93-94% full-crew, real survivor variance, favor stays 8-10x contested pious-vs-greedy)
+- [Phase ?]: PROJECT.md updated to describe the shipped two-verb/one-divine-currency game (D-11); retired three-verb/peril-track mechanics dated as v1.0 history, not deleted
 
 ### Pending Todos
 
@@ -150,6 +153,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T20:53:09.579Z
-Stopped at: Completed 03-06-PLAN.md (Ithaca's finale retrofitted onto the two-verb grammar)
+Last session: 2026-07-26T21:32:33.600Z
+Stopped at: Completed 03-07-PLAN.md (balance retune + PROJECT.md truth-up — phase 3 functionally complete)
 Resume file: None
