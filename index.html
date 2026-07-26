@@ -260,7 +260,17 @@ const CONFIG = {
   // never touches the pool, and the pool never pays favor either way.
   phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1,
               xeniaGift:1, courtGiftBonus:2, breachFavorExtra:1 },
-  ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
+  // ithaca (ANCHOR-03, D-08c, 03-06): the finale's own thematic kickers, tier 0/1/2
+  // across its three scenes (Beggar/Bow/Reckoning) — D-10's escalating arc, the same
+  // shape as every other anchor/island. bowFloor/qualifyTop/suitorPot are the UNCHANGED
+  // bow-eligibility/qualifier-slice/pot-split mechanics (predate this plan — do not
+  // touch). endureBonus/patiencePenalty are Scene 1's own standing kickers, layered via
+  // each beats cell's `fx` — standing is not one of the three currencies (DELTA_KEYS), so
+  // it never travels through econD/d, exactly like Cyclops's counters (EFFECT-04 escape
+  // hatch). grabStanding is Scene 2 Dare's own standing kicker on the high faces
+  // (shouldering to the front of the qualifying line).
+  ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2,
+             grabStanding:2 },
   // D-04: lotus.struckOn escalates scene-to-scene (taste -> drowse -> strand) — the
   // faces that take Abide (eating the fruit) from "just a meal" to "lotus-struck".
   // rations (03-03, BALANCE-01): the fruit's own generous kicker, layered via econD()'s
@@ -793,7 +803,7 @@ function passGate(p){
 //   - bots' commit is set the instant collectCommits starts (`b.commit = botDecide(...)`)
 //     but nothing renders p.commit until the reveal loop reads it inside resolveEffect —
 //     a bot's choice is exactly as masked as a human's.
-//   - every collectCommits() call site (troy/eat/act/pride/revive/patience) and the one
+//   - every collectCommits() call site (troy/eat/act/pride/revive) and the one
 //     hand-rolled sequential-gate loop that bypasses it (Orpheus, runHades) honor the
 //     same masked = !directorMode && humans>1 gate before a human's own buttons render
 //     in their ctrl-<id> slot; clearPrompt() wipes every ctrl-<id> slot between turns so
@@ -801,7 +811,9 @@ function passGate(p){
 //   - renderTrack/renderStrip/renderBag (public zones: boat position, hold, favor status,
 //     bag) read only state fields with no gate — by design, per the public/private split.
 // No new `_`-transient, no new masking branch, no collectCommits/passGate change.
-/* The single bot/human seam. kind ∈ 'troy'|'eat'|'act'|'pride'|'revive'|'patience' */
+/* The single bot/human seam. kind ∈ 'troy'|'eat'|'act'|'pride'|'revive'|'orpheus' — the
+   finale's last single-purpose kind ('patience') is retired as of 03-06: Ithaca's Scene 1
+   now runs through 'act' like every other verb scene (ECON-01 completion). */
 async function collectCommits(seats, kind, ctx){
   ctx = ctx || {};
   const humans = seats.filter(s=>!s.isBot);
@@ -867,12 +879,6 @@ async function askHuman(p, kind, ctx){
       [ {label:`🎼 Pay ${toll}🫒 to raise ${d.name}`, value:'pay', disabled:p.favor<toll},
         {label:'…let them lie', value:'no'} ], p.id);
   }
-  if(kind==='patience'){
-    return promptButtons(`${p.name}: disguised in your own hall — endure the insults, or reveal yourself?`,
-      `Endure banks standing toward the bow (+${CONFIG.ithaca.endureBonus}). Revealing early is tempting but forfeits standing (−${CONFIG.ithaca.patiencePenalty}).`,
-      [ {label:'🧎 Endure (patience)', value:'endure', cls:'abide'},
-        {label:'🗡️ Reveal yourself now', value:'reveal', cls:'dare'} ], p.id);
-  }
   return null;
 }
 
@@ -915,10 +921,6 @@ function botDecide(p, kind, ctx){
     if(p.temperament==='pious') return 'pay';
     if(p.temperament==='balanced' && livingCount()<=2) return 'pay';
     return 'no';
-  }
-  if(kind==='patience'){
-    if(p.temperament==='greedy' && p.favor>=T.revealFavor && rnd()<0.6) return 'reveal';
-    return 'endure';
   }
   return null;
 }
@@ -970,6 +972,23 @@ function botAct(p, ctx, T){
       if(p.temperament==='pious') return 'dare';     // resist, mind kept on Ithaca
       return rnd()<0.5?'dare':'abide';
     }
+  }
+
+  // ---- Ithaca finale overrides (ANCHOR-03/04, D-08c/D-09, 03-06) ----
+  // No EPISODES entry is ever active during the finale (state.episode stays null, exactly
+  // like Hades/Phaeacia's own verb scenes) — so the finale's own scenes are identified by
+  // object identity against ANCHORS.ithaca.scenes rather than ep.id. Reuses the SAME
+  // temperament knobs every episode override above already reads (T.dareBias/
+  // T.revealFavor) — no new bot config, per the plan's own instruction.
+  if(sc && ANCHORS.ithaca.scenes.includes(sc)){
+    if(ctx.sceneIndex===0){ // The Beggar: the old 'patience' bot logic, verbatim
+      if(p.temperament==='greedy' && p.favor>=T.revealFavor && rnd()<0.6) return 'dare';
+      return 'abide';
+    }
+    // The Bow / The Reckoning: a greedy bot is tempted to shoulder in / cut for the
+    // richest share; a pious bot holds the line — the same dareBias split every other
+    // island's generic policy below already reads.
+    return rnd()<T.dareBias ? 'dare' : 'abide';
   }
 
   // ---- generic policy ----
@@ -1773,11 +1792,12 @@ function revealNextIsland(){
   if(nextIsland){ nextIsland.revealed = true; renderTrack(); }
   return nextIsland || null;
 }
-// ANCHORS (ANCHOR-01/02/04, 03-05): the anchors' declarative scene data, shaped exactly
-// like an EPISODES entry's scenes[] — name/hook/verbs/beats — so the SAME
+// ANCHORS (ANCHOR-01/02/03/04, 03-05/03-06): the anchors' declarative scene data, shaped
+// exactly like an EPISODES entry's scenes[] — name/hook/verbs/beats — so the SAME
 // resolveEffect()/narrate()/stakesLine()/validateBeats() path consumes them with zero
-// special-casing (Pitfall 9). Only the two anchors landing THIS plan are here (Hades,
-// Phaeacia); Ithaca's three finale scenes are added in 03-06.
+// special-casing (Pitfall 9). All three anchors are here: Hades and Phaeacia (03-05), and
+// Ithaca's three finale scenes (03-06) — the last of the three, and the only one that can
+// end the game (ANCHOR-04).
 const ANCHORS = {
   // Hades (ANCHOR-01, D-08a): the living crew get a real verb moment ABOVE the bespoke
   // peek/revival mechanics — Abide observes the rites (piety, the favor road, plays the
@@ -1852,6 +1872,112 @@ const ANCHORS = {
                 tell:(p)=>`A bolder tale lands well — a bigger personal gift finds its way to your satchel.` },
             6:{ d:econD('dare',1,6,{you:CONFIG.phaeacia.courtGiftBonus}),
                 tell:(p)=>`The whole hall roars for the tale — the richest personal gift of the evening.` },
+          },
+        } },
+    ],
+  },
+  // Ithaca (ANCHOR-03, D-08c, 03-06): the finale's three-scene reversal, all now real
+  // verb scenes run through the SAME shared act path as every island/anchor (Pitfall 9).
+  // Standing is not one of the three currencies (DELTA_KEYS), so every standing move
+  // lives in a cell's `fx` closure while stash/hold/favor moves stay in `d` — the same
+  // composition Cyclops uses for its counters (EFFECT-04 escape hatch). Every `d` traces
+  // to econD(); tiers 0/1/2 escalate across the three scenes (D-10). The bespoke bow-
+  // floor/qualifier-slice/pot-split mechanics stay entirely OUTSIDE these scenes, run by
+  // runIthaca() immediately beneath each one (Pitfall 9), unchanged from their pre-retrofit
+  // shape.
+  ithaca: {
+    id:'ithaca', title:'Ithaca — The Homecoming',
+    scenes:[
+      // Scene 1 — The Beggar (tier 0): endure (Abide) banks standing toward the bow via
+      // fx + plays the FAVOR LAW straight (econD's own hold/high-roll-favor); reveal
+      // yourself early (Dare) forfeits standing via the SAME fx mechanism and seizes real
+      // stash, with the gods catching a clumsy reveal on the low face (econD's dareCaught).
+      // This is a direct, faithful retrofit of the old bespoke endure/reveal branch — the
+      // magnitudes (endureBonus/patiencePenalty) are unchanged, only HOW they're applied
+      // (a beats cell's fx instead of a bespoke if/else) has changed.
+      { name:'The Beggar', hook:'Disguised in your own hall, the suitors mock a stranger who doesn\'t know his place. Endure it, or let something slip.',
+        verbs:{ dare:{label:'Dare — reveal yourself early'}, abide:{label:'Abide — endure the insults (patience)'} },
+        beats: {
+          abide: {
+            1:{ d:econD('abide',0,1), fx:(p,bone)=>{ p.standing += CONFIG.ithaca.endureBonus; },
+                tell:(p)=>`A blow, a jeer — you take it and say nothing. Standing +${CONFIG.ithaca.endureBonus} (→ ${p.standing}).` },
+            3:{ d:econD('abide',0,3), fx:(p,bone)=>{ p.standing += CONFIG.ithaca.endureBonus; },
+                tell:(p)=>`Patience, as the beggar's part demands. Standing +${CONFIG.ithaca.endureBonus} (→ ${p.standing}).` },
+            4:{ d:econD('abide',0,4), fx:(p,bone)=>{ p.standing += CONFIG.ithaca.endureBonus; },
+                tell:(p)=>`You bear it with real discipline. Standing +${CONFIG.ithaca.endureBonus} (→ ${p.standing}).` },
+            6:{ d:econD('abide',0,6), fx:(p,bone)=>{ p.standing += CONFIG.ithaca.endureBonus; }, cls:'l-favor',
+                tell:(p)=>`Perfect patience, and the gods take quiet notice. Standing +${CONFIG.ithaca.endureBonus} (→ ${p.standing}).` },
+          },
+          dare: {
+            1:{ d:econD('dare',0,1), fx:(p,bone)=>{ p.standing -= CONFIG.ithaca.patiencePenalty; }, cls:'l-bad',
+                tell:(p)=>`Something slips too soon — the hall turns ugly. Standing −${CONFIG.ithaca.patiencePenalty} (→ ${p.standing}), favor lost.` },
+            3:{ d:econD('dare',0,3), fx:(p,bone)=>{ p.standing -= CONFIG.ithaca.patiencePenalty; },
+                tell:(p)=>`A suitor's cup vanishes into your rags. Standing −${CONFIG.ithaca.patiencePenalty} (→ ${p.standing}), stash grows.` },
+            4:{ d:econD('dare',0,4), fx:(p,bone)=>{ p.standing -= CONFIG.ithaca.patiencePenalty; },
+                tell:(p)=>`A moment of real fear in the hall — you take what you can. Standing −${CONFIG.ithaca.patiencePenalty} (→ ${p.standing}).` },
+            6:{ d:econD('dare',0,6), fx:(p,bone)=>{ p.standing -= CONFIG.ithaca.patiencePenalty; },
+                tell:(p)=>`A bold, early strike — real stash for it. Standing −${CONFIG.ithaca.patiencePenalty} (→ ${p.standing}).` },
+          },
+        } },
+      // Scene 2 — The Bow (tier 1): wait your turn (Abide) serves the commons and plays
+      // the FAVOR LAW straight; shoulder in and claim the bow first (Dare) grants real
+      // standing on the high faces via fx (CONFIG.ithaca.grabStanding — "claims the bow
+      // first" literally jumps the qualifying queue) and costs favor when the hall sees
+      // the overreach on the low face. This scene's own favor movement can itself shift a
+      // sailor across the bow floor BEFORE the unchanged eligibility/qualifier-slice
+      // mechanics below read it — a deliberate, thematic interaction, not a bug.
+      { name:'The Bow', hook:'Twelve axes in a row; only the true master of this house can string Odysseus\'s bow. Wait your turn, or shoulder to the front.',
+        verbs:{ dare:{label:'Dare — shoulder in and claim the bow first'}, abide:{label:'Abide — wait your turn, steady the shaft'} },
+        beats: {
+          abide: {
+            1:{ d:econD('abide',1,1),
+                tell:(p)=>`You steady the bow for whoever is best placed — the commons is served.` },
+            3:{ d:econD('abide',1,3),
+                tell:(p)=>`Patient hands, a fair turn kept — the hold is a little fuller for it.` },
+            4:{ d:econD('abide',1,4),
+                tell:(p)=>`You wait your turn and help the next hand find the string.` },
+            6:{ d:econD('abide',1,6), cls:'l-favor',
+                tell:(p)=>`Perfect discipline at the bow — the gods take notice of a house still held together.` },
+          },
+          dare: {
+            1:{ d:econD('dare',1,1), cls:'l-bad',
+                tell:(p)=>`You shoulder in too hard — the hall sees a beggar overreach. Favor lost.` },
+            3:{ d:econD('dare',1,3), fx:(p,bone)=>{ p.standing += CONFIG.ithaca.grabStanding; },
+                tell:(p)=>`You force your way to the front of the line. Standing +${CONFIG.ithaca.grabStanding} (→ ${p.standing}).` },
+            4:{ d:econD('dare',1,4), fx:(p,bone)=>{ p.standing += CONFIG.ithaca.grabStanding; },
+                tell:(p)=>`A bold grab for the bow — real standing for it. Standing +${CONFIG.ithaca.grabStanding} (→ ${p.standing}).` },
+            6:{ d:econD('dare',1,6), fx:(p,bone)=>{ p.standing += CONFIG.ithaca.grabStanding; },
+                tell:(p)=>`You claim the bow first, and the hall cannot deny you. Standing +${CONFIG.ithaca.grabStanding} (→ ${p.standing}).` },
+          },
+        } },
+      // Scene 3 — The Reckoning (tier 2): fight in the line (Abide) — the household's
+      // gain, favor road straight; cut through for yourself (Dare) — personal spoils on
+      // the high faces, favor lost when the low face makes it butchery rather than
+      // justice. This verb scene runs for the WHOLE living crew (everyone fights in the
+      // hall); the unchanged contribution-throw/pot-split mechanics below apply only to
+      // Scene 2's qualifiers — the two are deliberately separate (Pitfall 9).
+      { name:'The Reckoning', hook:'The suitors are trapped in their own hall. Fight in the line with your crew, or cut through alone for the richest share.',
+        verbs:{ dare:{label:'Dare — cut through for the richest share'}, abide:{label:'Abide — fight in the line, back to back'} },
+        beats: {
+          abide: {
+            1:{ d:econD('abide',2,1),
+                tell:(p)=>`Shoulder to shoulder, the line holds. The household gains for it.` },
+            3:{ d:econD('abide',2,3),
+                tell:(p)=>`You hold your ground and the household's stores grow.` },
+            4:{ d:econD('abide',2,4),
+                tell:(p)=>`Back to back with your crew — a real gain for the house.` },
+            6:{ d:econD('abide',2,6), cls:'l-favor',
+                tell:(p)=>`The line holds perfectly — the gods take notice of the justice of it.` },
+          },
+          dare: {
+            1:{ d:econD('dare',2,1), cls:'l-bad',
+                tell:(p)=>`You cut through carelessly — butchery, not justice. Favor lost.` },
+            3:{ d:econD('dare',2,3),
+                tell:(p)=>`You cut through for yourself — a real personal share.` },
+            4:{ d:econD('dare',2,4),
+                tell:(p)=>`A ruthless strike — the richest spoils fall to you.` },
+            6:{ d:econD('dare',2,6),
+                tell:(p)=>`You cut clean through the whole line — the richest personal share of the night.` },
           },
         } },
     ],
@@ -2136,20 +2262,31 @@ async function runPhaeacia(){
   render();
 }
 
+// runIthaca() — ANCHOR-03, D-08c, 03-06. The finale's three scenes now run through the
+// SAME shared two-verb act path as every island/anchor (Pitfall 9); the bespoke bow-floor/
+// qualifier-slice/contribution-throw/pot-split mechanics are UNCHANGED beneath each scene.
 async function runIthaca(){
   logBeat(`🏰 Ithaca — the homecoming`);
   flavor('The voyage was what the world did to you. This is what you do now that you hold the power. The suitors have drained the house all game — the bill comes due.');
   const living = livingPl();
   living.forEach(p=>p.standing = p.favor);
-  // Scene 1 — Beggar (patience)
-  logBeat('Scene 1 — The Beggar (patience)');
-  await collectCommits(living, 'patience', {});
-  for(const p of living){
-    if(p.commit==='endure'){ p.standing += CONFIG.ithaca.endureBonus; log(`🧎 ${p.name} endures the insults — standing +${CONFIG.ithaca.endureBonus} (→ ${p.standing}).`,'l-good'); }
-    else { p.standing -= CONFIG.ithaca.patiencePenalty; log(`🗡️ ${p.name} reveals early — forfeits standing −${CONFIG.ithaca.patiencePenalty} (→ ${p.standing}).`,'l-bad'); }
-  }
-  // Scene 2 — Bow (gate)
-  logBeat('Scene 2 — The Bow (gated by favor)');
+  const scenes = ANCHORS.ithaca.scenes;
+
+  // Scene 1 — The Beggar: the two-verb act path runs first — endure (Abide) banks
+  // standing via the cell's own fx, reveal early (Dare) forfeits it via the SAME fx
+  // mechanism (standing lives in fx, not d/econD, since it isn't one of the three
+  // currencies — EFFECT-04 escape hatch, matching Cyclops's counters).
+  logBeat(`Scene 1 — ${scenes[0].name}`);
+  log(`<span class="scene-hook">${scenes[0].hook}</span>`,'l-sys');
+  if(livingCount()>0) await actPhase('land', scenes[0], 0);
+
+  // Scene 2 — The Bow (gated by favor). The bespoke eligibility/qualifier-slice mechanics
+  // below are UNCHANGED — they now run beneath a verb scene whose own favor movement
+  // (this scene's Dare face-1 favor cost, Abide's high-roll favor gain) can itself shift a
+  // sailor across the bow floor before eligibility is read — a deliberate interaction.
+  logBeat(`Scene 2 — ${scenes[1].name}`);
+  log(`<span class="scene-hook">${scenes[1].hook}</span>`,'l-sys');
+  if(livingCount()>0) await actPhase('land', scenes[1], 1);
   const eligible = living.filter(p=>p.favor >= CONFIG.ithaca.bowFloor);
   living.filter(p=>p.favor<CONFIG.ithaca.bowFloor).forEach(p=>log(`${p.name} cannot lift the bow — favor ${p.favor} is below the floor of ${CONFIG.ithaca.bowFloor}.`,'l-bad'));
   eligible.sort((a,b)=> b.standing - a.standing);
@@ -2163,8 +2300,13 @@ async function runIthaca(){
   } else {
     log(`The contest is live: ${qualifiers.map(p=>p.name+' (standing '+p.standing+')').join(' vs ')} qualify for the bow.`,'l-favor');
   }
-  // Scene 3 — Reckoning
-  logBeat('Scene 3 — The Reckoning');
+
+  // Scene 3 — The Reckoning. The verb scene runs for the WHOLE living crew (everyone
+  // fights in the hall); the bespoke contribution-throw/pot-split below is UNCHANGED and
+  // applies only to Scene 2's qualifiers — the two are deliberately separate (Pitfall 9).
+  logBeat(`Scene 3 — ${scenes[2].name}`);
+  log(`<span class="scene-hook">${scenes[2].hook}</span>`,'l-sys');
+  if(livingCount()>0) await actPhase('land', scenes[2], 2);
   const pot = CONFIG.ithaca.suitorPot;
   log(`The suitors carry a stolen pot of ${pot}🫒 — everything they drained from the house.`,'l-sys');
   if(qualifiers.length>0){
