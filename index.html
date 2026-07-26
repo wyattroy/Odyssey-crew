@@ -242,7 +242,10 @@ const CONFIG = {
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
   // D-04: lotus.struckOn escalates scene-to-scene (taste -> drowse -> strand) — the
   // faces that take Abide (eating the fruit) from "just a meal" to "lotus-struck".
-  // rations is the flat free-meal gain Abide grants on every non-struck face.
+  // rations (03-03, BALANCE-01): the fruit's own generous kicker, layered via econD()'s
+  // `extra` on top of CONFIG.econ's rising per-tier hold contribution on every Abide face
+  // (struck or not) — the shore is generous, that is the trap. It no longer feeds the
+  // taker's own satchel (`you`); per D-02 the meal goes into the shared hold instead.
   lotus:   { rations:2, struckOn:[[1], [1,3], [1,3,4]] },
   // INTERIM (03-01): sirens' magnitudes below still feed the mechanical fold in
   // EPISODES.sirens (world+favor merged into one favor delta) — 03-03/03-04 re-author
@@ -1494,39 +1497,40 @@ const EPISODES = {
     }
   },
 
-  // INTERIM (03-01): Lotus is mechanically converted to two verbs + one currency. Give
-  // (share a ration, feed the hold) is folded ADDITIVELY into Abide's existing cells —
-  // NOT a straight replacement, since Abide already carries load-bearing D-04 behavior
-  // (the lotus-struck fx). Abide's own `d`/`fx` (the free-ration gain / struck flag) are
-  // preserved verbatim; Give's `you`/`crew` deltas are merged into the same cell so
-  // Abide's hold contribution IS now part of its base effect too (D-02's general rule,
-  // applied even to this interim island). Dare (hauling back) is untouched — it never
-  // referenced world/curse and already declares only in-vocabulary keys.
+  // RE-AUTHORED (03-03): Lotus keeps its deliberate D-04 inversion — here the safe-looking
+  // verb is the dangerous one. Abide is taking the fruit that's offered: it genuinely
+  // feeds, but per the new economy the meal goes into the COMMONS (econD's abideHold, plus
+  // CONFIG.lotus.rations as the fruit's own generous kicker — the shore is generous, that
+  // is the trap) rather than the taker's own belly, so Abide never grants `you` here, only
+  // `crew`. The gods notice restraint on the high face (abideFavor) — but on the scene's
+  // strand faces (CONFIG.lotus.struckOn[sceneIdx], escalating taste -> drowse -> strand,
+  // kept exactly as before) it takes you: lotus-struck, unable to act, and left behind if
+  // still struck when the ship sails. Dare is hauling yourself or a struck mate back to
+  // the ship: the self-interested survival move, paying the rescuer's own stash (never
+  // favor, never earning the gods' notice) via the unchanged lotusDareFx/lotusDareTell —
+  // dragging the crew back is survival, not piety, so its `d` stays empty and its cost
+  // lives entirely in the fx escape hatch, exactly as D-06's rescue mechanics require.
   lotus: {
     id:'lotus', title:'The Lotus-Eaters',
     hook:'A gentle shore. The natives offer honey-sweet fruit. One taste and home stops mattering.',
-    // D-04/D-05: Lotus INVERTS the general Dare/Abide asymmetry on purpose. Everywhere
-    // else, Abide is the safe/inert road and Dare is the risky one. Here, Abide (giving
-    // in to the fruit) is the risky path — it grants a free ration but can leave you
-    // lotus-struck (CONFIG.lotus.struckOn escalates scene to scene: taste -> drowse ->
-    // strand, D-09), and a player still struck at onDepart below is left behind and
-    // dies. Dare (hauling yourself or a struck mate back to the ship) is the survival
-    // move — safe, but pays NO favor (D-05: this retunes the third shipped Dare-favor
-    // violation; dragging the crew back is survival, not piety). Abide-6 is the ONLY
-    // favor path on this island (resisting the fruit entirely, keeping Ithaca in mind).
+    // By 'Cast Off' (tier 2), CONFIG.lotus.struckOn's escalation reaches [1,3,4] — only
+    // face 6 escapes the fruit, and it must be the one face the gods reward. Since
+    // CONFIG.econ.abideFavor's tier-2 table also grants at face 4 (shared with every other
+    // island), face 4's cell below explicitly cancels that grant via an `extra` override
+    // sourced from the same CONFIG.econ table — a struck sailor never also earns favor.
     scenes:[
       { name:'The Offering', hook:'The lotus is pressed into every hand.',
         verbs:{dare:{label:'Dare — haul yourself (or a struck mate) back to the ship'}, abide:{label:'Abide — take the fruit that\'s offered'}},
         beats: {
           abide: {
-            1:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0), cls:'l-bad',
-                tell:(p)=>`You take the fruit without thinking — sweet, cloying, and the world goes soft at the edges. <b>The lotus takes you: lotus-struck.</b> A scrap still reaches the hold.` },
-            3:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0),
-                tell:(p)=>`A bite, out of politeness more than hunger. It goes down easy and fills your belly, with a scrap left for the hold.` },
-            4:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0),
-                tell:(p)=>`You eat without really deciding to. Pleasant. Forgettable. A scrap still reaches the hold.` },
-            6:{ d:{favor:CONFIG.fx.tiny, you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(0), cls:'l-favor',
-                tell:(p)=>`You look at the fruit a long moment, then set it down and press a scrap into the hold instead. Ithaca stays sharp in your mind.` },
+            1:{ d:econD('abide',0,1,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(0), cls:'l-bad',
+                tell:(p)=>`You take the fruit without thinking — sweet, cloying, and the world goes soft at the edges. <b>The lotus takes you: lotus-struck.</b> What you carried still reaches the hold.` },
+            3:{ d:econD('abide',0,3,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(0),
+                tell:(p)=>`A bite, out of politeness more than hunger. You eat your fill among them and carry a good share back to the hold.` },
+            4:{ d:econD('abide',0,4,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(0),
+                tell:(p)=>`You eat without really deciding to — pleasant, forgettable — and still carry a fuller armful back to the hold.` },
+            6:{ d:econD('abide',0,6,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(0), cls:'l-favor',
+                tell:(p)=>`You eat with a clear head, mindful of Ithaca even here, and carry the fullest share yet back to the hold — the gods notice the restraint.` },
           },
           dare: {
             1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'grimly, dragging your own feet through the sand') },
@@ -1539,14 +1543,14 @@ const EPISODES = {
         verbs:{dare:{label:'Dare — go back for a struck mate'}, abide:{label:'Abide — take another bite'}},
         beats: {
           abide: {
-            1:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-bad',
-                tell:(p)=>`You settle into the sand beside the others — just for a moment, you tell yourself. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
-            3:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-bad',
-                tell:(p)=>`One more bite, to be sociable — and the shore tilts gently under you. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
-            4:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1),
-                tell:(p)=>`You eat, but keep half an eye on the tide line — this one goes down without taking hold, and a scrap reaches the hold.` },
-            6:{ d:{favor:CONFIG.fx.tiny, you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-favor',
-                tell:(p)=>`The fruit's sweetness turns to ash in your mouth. You think of home, and press a scrap into the hold instead.` },
+            1:{ d:econD('abide',1,1,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(1), cls:'l-bad',
+                tell:(p)=>`You settle into the sand beside the others — just for a moment, you tell yourself. <b>Lotus-struck.</b> What you carried still reaches the hold.` },
+            3:{ d:econD('abide',1,3,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(1), cls:'l-bad',
+                tell:(p)=>`One more bite, to be sociable — and the shore tilts gently under you. <b>Lotus-struck.</b> What you carried still reaches the hold.` },
+            4:{ d:econD('abide',1,4,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(1), cls:'l-favor',
+                tell:(p)=>`You eat, but keep half an eye on the tide line — this one goes down without taking hold, and you carry a good share back to the hold; the gods take quiet notice.` },
+            6:{ d:econD('abide',1,6,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(1), cls:'l-favor',
+                tell:(p)=>`The fruit's sweetness turns to ash in your mouth. You think of home, and carry the fullest share yet back to the hold.` },
           },
           dare: {
             1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'stumbling, the sand pulling at every step') },
@@ -1559,14 +1563,17 @@ const EPISODES = {
         verbs:{dare:{label:'Dare — one last rescue run'}, abide:{label:'Abide — linger on the sand'}},
         beats: {
           abide: {
-            1:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-bad',
-                tell:(p)=>`The oars are already dipping and still you reach for the fruit. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
-            3:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-bad',
-                tell:(p)=>`You mean to rise, you really do — but your hand finds the fruit first. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
-            4:{ d:{you:CONFIG.lotus.rations+CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-bad',
-                tell:(p)=>`One last taste, you think, and the shore closes gently over you. <b>Lotus-struck.</b> A scrap still reaches the hold.` },
-            6:{ d:{favor:CONFIG.fx.tiny, you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-favor',
-                tell:(p)=>`Even now, with the oars creaking, you set the fruit down, press a scrap into the hold, and walk to the boat.` },
+            1:{ d:econD('abide',2,1,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`The oars are already dipping and still you reach for the fruit. <b>Lotus-struck.</b> What you carried still reaches the hold.` },
+            3:{ d:econD('abide',2,3,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`You mean to rise, you really do — but your hand finds the fruit first. <b>Lotus-struck.</b> What you carried still reaches the hold.` },
+            // face 4 still strands at this tier (CONFIG.lotus.struckOn[2] includes it) —
+            // cancel the shared abideFavor[2][4] grant so a struck sailor never also earns
+            // favor here (see the scene-set comment above).
+            4:{ d:econD('abide',2,4,{crew:CONFIG.lotus.rations, favor:-(CONFIG.econ.abideFavor[2][4]||0)}), fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`One last taste, you think, and the shore closes gently over you. <b>Lotus-struck.</b> What you carried still reaches the hold.` },
+            6:{ d:econD('abide',2,6,{crew:CONFIG.lotus.rations}), fx:lotusAbideFx(2), cls:'l-favor',
+                tell:(p)=>`Even now, with the oars creaking, you set the fruit down and carry the fullest share of all back to the hold — the gods notice fully.` },
           },
           dare: {
             1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'nearly too late, the tide already tugging at your knees') },
@@ -1584,11 +1591,12 @@ const EPISODES = {
   },
 };
 // D-04/D-05 Lotus helpers, shared across all three scenes above:
-//   - lotusAbideFx(sceneIdx) returns the fx closure Abide uses: the free-ration gain
-//     itself lives in the cell's own `d` (declarative), but whether THIS face strands
-//     you is a boolean flip a flat `d` can't express — CONFIG.lotus.struckOn[sceneIdx]
-//     is the single source of truth for which faces strand on which scene (escalating
-//     taste -> drowse -> strand, D-09), read fresh on every call (no bare integers).
+//   - lotusAbideFx(sceneIdx) returns the fx closure Abide uses: the strand flag itself is
+//     a boolean flip a flat `d` can't express — CONFIG.lotus.struckOn[sceneIdx] is the
+//     single source of truth for which faces strand on which scene (escalating taste ->
+//     drowse -> strand, D-09), read fresh on every call (no bare integers). The free-meal
+//     hold contribution lives declaratively in each cell's own `d` (econD + the
+//     CONFIG.lotus.rations kicker), same as every other beats cell.
 //   - lotusDareFx is identical across all three scenes: find a struck living mate and
 //     clear them (a small satchel cost, same as the shipped lotusRescue it replaces),
 //     but grant NO favor (D-05 — this is the retune). The outcome is stashed on
