@@ -173,7 +173,10 @@ const CONFIG = {
   worldToExtraBlue: (curse) => Math.min(6, Math.floor(curse / 2)),
   phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1 },
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
-  lotus:   { rations:2, struckOn:[1] },               // eating lotus: +rations; these faces strand you
+  // D-04: lotus.struckOn escalates scene-to-scene (taste -> drowse -> strand) — the
+  // faces that take Abide (eating the fruit) from "just a meal" to "lotus-struck".
+  // rations is the flat free-meal gain Abide grants on every non-struck face.
+  lotus:   { rations:2, struckOn:[[1], [1,3], [1,3,4]] },
   sirens:  { doomAt:6, listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1, wreckWorldExtra:1, wreckCrew:1 },
   helios:  { herd:12, doomAt:7, restraintBless:2, blessAt:2 },
   cyclops: { need:3, drunkNeeded:2, stakeThreshold:2 },
@@ -625,14 +628,14 @@ function botAct(p, ctx, T){
       return 'abide';
     }
     if(ep.id==='lotus'){
-      if(ctx.sceneIndex===1){ // rescue scene: clear-headed pious go back for a mate
-        const struck = state.players.find(x=>x.lotusStruck && notDead(x));
-        if(struck && (p.temperament!=='greedy') && canGive) return 'dare';
-        return 'abide';
-      }
-      // scene 0 / other: greedy eat the lotus, pious resist
-      if(p.temperament==='greedy') return 'dare';
-      if(p.temperament==='pious') return 'abide';
+      // D-04 inverts the usual mapping here: Abide is the risky "give in to the fruit"
+      // road and Dare is the safe "haul back" road (same rescue move in all 3 scenes,
+      // no longer just scene 2) — so the temperament split below is the mirror image
+      // of every other island's lotus/dare-favor-free branches above.
+      const struck = state.players.find(x=>x.lotusStruck && notDead(x));
+      if(struck && p.temperament!=='greedy' && canGive) return 'dare'; // go haul a struck mate back
+      if(p.temperament==='greedy') return 'abide';   // give in to the free ration — self first
+      if(p.temperament==='pious') return 'dare';     // resist, mind kept on Ithaca
       return rnd()<0.5?'dare':'abide';
     }
   }
@@ -1231,16 +1234,95 @@ const EPISODES = {
   lotus: {
     id:'lotus', title:'The Lotus-Eaters', trackName:'', worldStart:0, doomAt:null,
     hook:'A gentle shore. The natives offer honey-sweet fruit. One taste and home stops mattering.',
+    // D-04/D-05: Lotus INVERTS the general Dare/Abide asymmetry on purpose. Everywhere
+    // else, Abide is the safe/inert road and Dare is the risky one. Here, Abide (giving
+    // in to the fruit) is the risky path — it grants a free ration but can leave you
+    // lotus-struck (CONFIG.lotus.struckOn escalates scene to scene: taste -> drowse ->
+    // strand, D-09), and a player still struck at onDepart below is left behind and
+    // dies. Dare (hauling yourself or a struck mate back to the ship) is the survival
+    // move — safe, but pays NO favor (D-05: this retunes the third shipped Dare-favor
+    // violation; dragging the crew back is survival, not piety). Abide-6 is the ONLY
+    // favor path on this island (resisting the fruit entirely, keeping Ithaca in mind).
+    // Give shares a ration with the hold, as everywhere else, and never moves favor.
     scenes:[
       { name:'The Offering', hook:'The lotus is pressed into every hand.',
-        verbs:{dare:{label:'Dare — eat the lotus (free 🍖, risk oblivion)'}, abide:{label:'Abide — refuse the fruit'}, give:{label:'Give — share your ration'}},
-        reskin:{ dare:lotusEat, abide:(p,b)=>{ log(`${p.name} refuses the fruit 🎲${b}.`,'l-sys'); return 'clear-headed'; } } },
+        verbs:{dare:{label:'Dare — haul yourself (or a struck mate) back to the ship'}, abide:{label:'Abide — take the fruit that\'s offered'}, give:{label:'Give — share your ration'}},
+        beats: {
+          abide: {
+            1:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(0), cls:'l-bad',
+                tell:(p)=>`You take the fruit without thinking — sweet, cloying, and the world goes soft at the edges. <b>The lotus takes you: lotus-struck.</b>` },
+            3:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(0),
+                tell:(p)=>`A bite, out of politeness more than hunger. It goes down easy and fills your belly.` },
+            4:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(0),
+                tell:(p)=>`You eat without really deciding to. Pleasant. Forgettable.` },
+            6:{ d:{favor:CONFIG.fx.tiny}, fx:lotusAbideFx(0), cls:'l-favor',
+                tell:(p)=>`You look at the fruit a long moment, then set it down. Ithaca stays sharp in your mind.` },
+          },
+          dare: {
+            1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'grimly, dragging your own feet through the sand') },
+            3:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'quickly, before the sweetness can find you too') },
+            4:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'steady, keeping the ship in sight the whole way') },
+            6:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'clean and sure-footed, no hesitation at all') },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You press your own ration into a mate's hands instead — into the hold it goes.` },
+            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You share what little you've got. The hold is better for it.` },
+            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`No sense hoarding on a shore like this — your ration goes to the hold.` },
+            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You give freely, thinking of the whole crew and not just yourself.` },
+          },
+        } },
       { name:'Going Back', hook:'Some sailors sit smiling in the sand, forgetting the ship. Will anyone haul them out?',
-        verbs:{dare:{label:'Dare — go back for a struck mate'}, abide:{label:'Abide — mind yourself'}, give:{label:'Give — share your ration'}},
-        reskin:{ dare:lotusRescue, abide:(p,b)=>{ log(`${p.name} keeps to the ship 🎲${b}.`,'l-sys'); return 'aboard'; } } },
+        verbs:{dare:{label:'Dare — go back for a struck mate'}, abide:{label:'Abide — take another bite'}, give:{label:'Give — share your ration'}},
+        beats: {
+          abide: {
+            1:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(1), cls:'l-bad',
+                tell:(p)=>`You settle into the sand beside the others — just for a moment, you tell yourself. <b>Lotus-struck.</b>` },
+            3:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(1), cls:'l-bad',
+                tell:(p)=>`One more bite, to be sociable — and the shore tilts gently under you. <b>Lotus-struck.</b>` },
+            4:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(1),
+                tell:(p)=>`You eat, but keep half an eye on the tide line — this one goes down without taking hold.` },
+            6:{ d:{favor:CONFIG.fx.tiny}, fx:lotusAbideFx(1), cls:'l-favor',
+                tell:(p)=>`The fruit's sweetness turns to ash in your mouth. You think of home, and it's enough.` },
+          },
+          dare: {
+            1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'stumbling, the sand pulling at every step') },
+            3:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'shouting over the surf to break the spell') },
+            4:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'firm-handed, no time to waste') },
+            6:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'without a second thought, already turning for the ship') },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You go without, so the hold has a little more in it.` },
+            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Your ration joins the hold — one less mouth to worry over later.` },
+            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You'd rather the hold be full than your own belly.` },
+            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Easy giving, and the hold is stronger for it.` },
+          },
+        } },
       { name:'Cast Off', hook:'The tide turns. The oars are manned. Whoever is still ashore will be left.',
-        verbs:{dare:{label:'Dare — one last rescue run'}, abide:{label:'Abide — take your oar'}, give:{label:'Give — share your ration'}},
-        reskin:{ dare:lotusRescue, abide:(p,b)=>{ log(`${p.name} takes an oar 🎲${b}.`,'l-sys'); return 'ready'; } } },
+        verbs:{dare:{label:'Dare — one last rescue run'}, abide:{label:'Abide — linger on the sand'}, give:{label:'Give — share your ration'}},
+        beats: {
+          abide: {
+            1:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`The oars are already dipping and still you reach for the fruit. <b>Lotus-struck.</b>` },
+            3:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`You mean to rise, you really do — but your hand finds the fruit first. <b>Lotus-struck.</b>` },
+            4:{ d:{you:CONFIG.lotus.rations}, fx:lotusAbideFx(2), cls:'l-bad',
+                tell:(p)=>`One last taste, you think, and the shore closes gently over you. <b>Lotus-struck.</b>` },
+            6:{ d:{favor:CONFIG.fx.tiny}, fx:lotusAbideFx(2), cls:'l-favor',
+                tell:(p)=>`Even now, with the oars creaking, you set the fruit down and walk to the boat.` },
+          },
+          dare: {
+            1:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'nearly too late, the tide already tugging at your knees') },
+            3:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'racing the last of the daylight') },
+            4:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'hard and fast, no room left for hesitation') },
+            6:{ d:{}, fx:lotusDareFx, tell:(p)=>lotusDareTell(p,'in one clean motion, straight for the oars') },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`You empty your satchel into the hold before you take your oar.` },
+            3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Whatever you've got left goes to the hold, not your belly.` },
+            4:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`Your last ration, given up gladly, joins the hold.` },
+            6:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny}, tell:(p)=>`A final, generous share — the hold is ready for the crossing.` },
+          },
+        } },
     ],
     onDepart(){
       const stranded = state.players.filter(p=>p.lotusStruck && notDead(p));
@@ -1249,18 +1331,29 @@ const EPISODES = {
     }
   },
 };
-function lotusEat(p,b){
-  p.satchel += CONFIG.lotus.rations;
-  let extra='';
-  if(CONFIG.lotus.struckOn.includes(b)){ p.lotusStruck=true; extra=' — <b>the fruit takes them: lotus-struck!</b>'; }
-  log(`${p.name} eats the lotus 🎲${b} → +${CONFIG.lotus.rations}🍖${extra}`, extra?'l-bad':'l-act');
-  return `+${CONFIG.lotus.rations}🍖`+(extra?' struck':'');
+// D-04/D-05 Lotus helpers, shared across all three scenes above:
+//   - lotusAbideFx(sceneIdx) returns the fx closure Abide uses: the free-ration gain
+//     itself lives in the cell's own `d` (declarative), but whether THIS face strands
+//     you is a boolean flip a flat `d` can't express — CONFIG.lotus.struckOn[sceneIdx]
+//     is the single source of truth for which faces strand on which scene (escalating
+//     taste -> drowse -> strand, D-09), read fresh on every call (no bare integers).
+//   - lotusDareFx is identical across all three scenes: find a struck living mate and
+//     clear them (a small satchel cost, same as the shipped lotusRescue it replaces),
+//     but grant NO favor (D-05 — this is the retune). The outcome is stashed on
+//     state.ep for lotusDareTell() to narrate, since resolveEffect's tell(p) signature
+//     only receives the acting player, not the fx result.
+function lotusAbideFx(sceneIdx){
+  return (p,b)=>{ if(CONFIG.lotus.struckOn[sceneIdx].includes(b)) p.lotusStruck = true; };
 }
-function lotusRescue(p,b){
+function lotusDareFx(p,b){
   const struck = state.players.find(x=>x.lotusStruck && notDead(x));
-  if(struck){ struck.lotusStruck=false; if(p.satchel>0)p.satchel--; p.favor+=1; if(state.onIsland)p.islandFavorEarned+=1;
-    log(`${p.name} hauls ${struck.name} back to the ship 🎲${b} → ${struck.name} is freed; ${p.name} +1🫒.`,'l-good'); return `freed ${struck.name} · +1🫒`; }
-  log(`${p.name} looks for a struck mate but finds none 🎲${b}.`,'l-sys'); return 'none to save';
+  if(struck){ struck.lotusStruck=false; if(p.satchel>0)p.satchel--; state.ep.lotusFreed = struck.name; }
+  else { state.ep.lotusFreed = null; }
+}
+function lotusDareTell(p, manner){
+  return state.ep.lotusFreed
+    ? `You wade back into the sand, ${manner}, and haul ${state.ep.lotusFreed} to their feet — no glory in it, just a mate saved.`
+    : `No one lies stranded to save this time — you haul your own feet back toward the ship, ${manner}.`;
 }
 
 /* --- Cyclops collective helpers --- */
