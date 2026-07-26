@@ -98,8 +98,26 @@ Plans (single self-contained index.html → each plan runs in its own wave, sequ
   4. Blind-commit masking holds: with 2+ humans and director-mode off, no board zone leaks a bot or human commit before reveal (public zones render freely from state; private-until-reveal zones stay gated).
   5. The board is a pure projection of state — no parallel/duplicate state, `_`-prefixed transients only, `rng()` draws stay synchronous inside reducers — so `?seed=` reproduces an identical game, the 0-human seeded run completes unattended to a winner, and a readable transcript survives (log demoted to a collapsible/director panel, not deleted).
 
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+
+Plans (single self-contained index.html → each plan runs in its own wave, sequential; tracer-first):
+
+**Wave 1**
+
+- [ ] 04-01-PLAN.md — Tracer: renderBoard() scaffold + voyage track with advancing ⛵ boat + upgraded crew row (favor/hold/status), pure projection (BOARD-01, BOARD-06, BOARD-07)
+
+**Wave 2** *(blocked on Wave 1 — same file)*
+
+- [ ] 04-02-PLAN.md — Crossing strip: draining blue/white marble bag + live reveal-gated pip dice (BOARD-02, BOARD-03)
+
+**Wave 3** *(blocked on Wave 2 — same file)*
+
+- [ ] 04-03-PLAN.md — Action bar: clickable Dare/Abide/Give (+ eat) via the existing commit seam + on-board narration surface (BOARD-04, BOARD-05)
+
+**Wave 4** *(blocked on Wave 3 — same file)*
+
+- [ ] 04-04-PLAN.md — Blind-commit masking (public vs private-until-reveal) + ship's-log demotion to collapsible panel + final determinism/regression pass (BOARD-08, BOARD-09)
 
 ## Progress
 
