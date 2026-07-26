@@ -60,7 +60,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Across every authored island cell the asymmetry holds by inspection: Dare risks self+crew for high upside, Abide is riskless/low-upside/lethal-if-only, Give sustains the crew and never moves favor.
   5. Every prior Dare-favor case (Sirens, Cyclops-boast, Lotus) is either retuned to a non-favor reward or recorded in the beat data as an explicit, flagged Dare-favor exception — no accidental favor-on-Dare remains, and the seeded 0-human run still completes.
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans (single self-contained index.html → each plan runs in its own wave, sequential):
+- [ ] 02-01-PLAN.md — Tracer: full Helios island to beats + CONFIG payoff-tier scaffolding + reusable headless harness (CONTENT-01)
+- [ ] 02-02-PLAN.md — Cyclops: scenes 2–3 to beats (collective blinding + individual escape) + boast/stake Dare-favor retuned off → world-anger (CONTENT-02)
+- [ ] 02-03-PLAN.md — Sirens: 3 scenes to beats, Dare→favor kept as the one flagged exception + wreck risk (CONTENT-03)
+- [ ] 02-04-PLAN.md — Lotus: 3 scenes to beats, Abide succumbs (lotus-struck) / Dare hauls back (no favor) / Give shares (CONTENT-04)
+- [ ] 02-05-PLAN.md — Favor-law + asymmetry audit across all 12 island scenes + fixed multi-seed 0-human regression sweep (CONTENT-05, CONTENT-06)
 
 ### Phase 3: Anchor Verb Retrofit & Balance Retune
 
@@ -101,6 +108,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. Effect Engine & Sequential Resolution | v1.1 | 2/2 | Complete    | 2026-07-25 |
-| 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 0/TBD | Not started | - |
+| 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 0/5 | Not started | - |
 | 3. Anchor Verb Retrofit & Balance Retune | v1.1 | 0/TBD | Not started | - |
 | 4. Interactive Board | v1.1 | 0/TBD | Not started | - |
