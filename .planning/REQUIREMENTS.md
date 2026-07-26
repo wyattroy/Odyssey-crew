@@ -33,7 +33,7 @@
 
 - [x] **CONTENT-01**: Helios scenes are authored to the moral of *restraint* — Abide is inert except a 6 (forage dandelions, small gain); Dare escalates the commons transgression (kill the cattle) with high upside and Helios's wrath.
 - [x] **CONTENT-02**: Cyclops scenes are authored to the moral of *pride/boasting* — Abide keeps you hidden/stuck (pure-abide strands you eating cheese until left behind); Dare (boast/escape) carries the curse risk and high upside.
-- [ ] **CONTENT-03**: Sirens scenes are authored to the moral of *rewarded temptation / wreck* — daring the song risks the ship for a real prize; abiding is safe but yields little.
+- [x] **CONTENT-03**: Sirens scenes are authored to the moral of *rewarded temptation / wreck* — daring the song risks the ship for a real prize; abiding is safe but yields little.
 - [ ] **CONTENT-04**: Lotus scenes are authored to the moral of *forgetting / the strand* — abiding risks being lulled/left; daring pulls the crew back to the voyage.
 - [ ] **CONTENT-05**: Every authored island beat honors the Dare/Abide/Give asymmetry (Dare = high risk to self+crew, high upside; Abide = riskless, low upside, lethal-if-only; Give = riskless, sustains crew, no favor) — verifiable, not aspirational.
 - [ ] **CONTENT-06**: Existing favor-law violations (Sirens, Cyclops-boast, Lotus grant favor via Dare) are reconciled — each is either retuned to a non-favor reward or explicitly confirmed as an intentional flagged Dare-favor exception, with the decision recorded in the beat data.
@@ -112,7 +112,7 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | RESOLVE-03 | Phase 1 | Complete |
 | CONTENT-01 | Phase 2 | Complete |
 | CONTENT-02 | Phase 2 | Complete |
-| CONTENT-03 | Phase 2 | Pending |
+| CONTENT-03 | Phase 2 | Complete |
 | CONTENT-04 | Phase 2 | Pending |
 | CONTENT-05 | Phase 2 | Pending |
 | CONTENT-06 | Phase 2 | Pending |

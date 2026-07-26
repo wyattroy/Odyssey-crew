@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 2
 current_phase_name: Themed Island Content & Favor-Law Reconciliation
 status: executing
-stopped_at: Completed 02-02-PLAN.md (Cyclops)
-last_updated: "2026-07-26T04:12:08.471Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-07-26T04:22:42.807Z"
 last_activity: 2026-07-25
 last_activity_desc: Phase 2 execution started
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 2 (Themed Island Content & Favor-Law Reconciliation) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-07-25 — Phase 2 execution started
 
-Progress: [██████░░░░] 57%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -62,6 +62,7 @@ Progress: [██████░░░░] 57%
 | Phase 01 P02 | 12min | 2 tasks | 1 files |
 | Phase 02 P01 | 15min | 2 tasks | 2 files |
 | Phase 02 P02 | ~20min | 2 tasks | 1 files |
+| Phase 02 P03 | 25min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Cyclops scene 2 keeps collectiveCheck: stakeCheck seam — per-cell beats narrate individual heave/brace/pour, stakeCheck owns the collective threshold + (no-favor) escape-progress award
 - [Phase ?]: Cyclops scene 3 escape uses faces 3/4 (40% weight) as primary triggers, not face 6, per Pitfall 11 (no rare-face-only good outcome)
 - [Phase ?]: Extended Cyclops's no-favor convention to Abide across all 3 scenes (not just Dare) — Cyclops reads as survival/cunning throughout, distinct from Helios's Abide-6 favor-nod pattern
+- [Phase ?]: Sirens Dare face 1 (zero favor) is the wreck-risk locus: extra world-anger in all three scenes plus a direct hold cost from Scene 2 onward, escalating the lure from mystical to physical.
+- [Phase ?]: Sirens Abide grants zero favor on all faces across all three scenes — a deliberate, documented departure from the general Abide-6-favor default (D-05), since the disciplined choice here should pay nothing.
+- [Phase ?]: Retired sirensReskin() entirely; all three Sirens scenes now resolve via beats with the Dare-favor grant flagged in-data as the single sanctioned D-05 exception.
 
 ### Pending Todos
 
@@ -106,6 +110,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T04:12:08.466Z
-Stopped at: Completed 02-02-PLAN.md (Cyclops)
+Last session: 2026-07-26T04:22:42.802Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None
