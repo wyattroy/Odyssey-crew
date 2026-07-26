@@ -57,6 +57,17 @@
   .hold-danger{border-color:var(--danger); box-shadow:0 0 0 1px var(--danger) inset}
   .warn{color:var(--danger); font-size:.82rem; margin-top:2px}
 
+  /* crossing bag marbles (BOARD-02) */
+  .bag{display:flex; flex-wrap:wrap; gap:3px; margin:6px 0}
+  .marble{width:13px; height:13px; border-radius:50%; display:inline-block;
+    box-shadow:inset 0 -2px 3px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.4); transition:opacity .25s}
+  .marble.blue{background:radial-gradient(circle at 35% 30%, #7fc0ec, var(--sea) 70%); border:1px solid #1d4d7a}
+  .marble.white{background:radial-gradient(circle at 35% 30%, #ffffff, #d7e3ef 70%); border:1px solid #9fb3c8}
+  .marble.drawn{opacity:.28; filter:grayscale(1)}
+
+  /* dice (BOARD-03) */
+  .die{font-size:1.25rem; margin-right:3px; vertical-align:middle; color:var(--ink)}
+
   /* player panels */
   .players{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px}
   .p{background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--line); border-radius:11px; padding:10px}
@@ -410,6 +421,17 @@ function renderTrack(){
     t.appendChild(d);
   });
 }
+function renderBag(){
+  // BOARD-02: one round marble per entry in state.crossing.bag (blue=sea, white=land),
+  // read directly off the array on every call — nothing is cached/tracked board-side, so
+  // the bag drains for free once drawMarble() (the reducer) splices it (Pitfall 1/9).
+  // No rnd()/rint() here: the draw already happened in the reducer before this renders.
+  const bag = state.crossing.bag;
+  const marbles = bag.map(m=>`<span class="marble ${m}"></span>`).join('');
+  const drawn = state.crossing._lastDrawn
+    ? `<span class="marble ${state.crossing._lastDrawn} drawn" title="just drawn"></span>` : '';
+  return `<div class="bag">${marbles}${drawn}</div>`;
+}
 function renderStrip(){
   const s = $('strip'); s.innerHTML='';
   const lc = livingCount();
@@ -424,6 +446,7 @@ function renderStrip(){
     const total = bag.length;
     const cross = el('div','stat');
     cross.innerHTML = `<div class="k">Crossing bag</div><div class="v">🔵×${blue} ⚪×${white}</div>`
+      + renderBag()
       + `<div class="small">land next: ${total? white+'-in-'+total : '—'}</div>`;
     s.appendChild(cross);
   }
@@ -1487,14 +1510,19 @@ function startCrossing(){
   for(let i=0;i<CONFIG.crossing.whiteStart;i++) bag.push('white');
   const extra = CONFIG.worldToExtraBlue(state.curse);
   for(let i=0;i<extra;i++) bag.push('blue');
-  state.crossing = { bag, whitesAdded:0, atSea:true };
+  // _lastDrawn (BOARD-07 board-only transient): which marble color the reducer just
+  // pulled, set by drawMarble() immediately before the render that should show it, and
+  // cleared at the top of the next drawMarble() call — never read/written by renderBag().
+  state.crossing = { bag, whitesAdded:0, atSea:true, _lastDrawn:null };
   if(extra>0) log(`Poseidon's curse salts the bag with ${extra} extra blue — a longer, hungrier leg.`,'l-bad');
 }
 function drawMarble(firstDraw){
+  state.crossing._lastDrawn = null; // clear the previous draw's flourish before this one
   if(!firstDraw){ state.crossing.bag.push('white'); state.crossing.whitesAdded++; }
   const bag = state.crossing.bag;
   const idx = rint(bag.length);
   const m = bag.splice(idx,1)[0];
+  state.crossing._lastDrawn = m;
   return m;
 }
 async function runCrossing(){
