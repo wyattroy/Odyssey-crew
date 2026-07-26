@@ -466,6 +466,16 @@ function statusTok(p){
   if(p.lotusStruck) return '🌸 lotus-struck';
   return '🟢 alive';
 }
+// BOARD-03: bone faces only ever land on 1/3/4/6 (CONFIG.boneWeights) — map each to a
+// Unicode pip-die glyph. renderDice() reads ONLY the reveal-gated p._boneShow (the field
+// actPhase's resolutionOrder() reveal loop sets one acting player at a time), never the
+// pre-rolled p.lastBone (set for every actor at once, before any reveal) — so a die never
+// appears for a player before their turn in the reveal order (Pitfall 2/5).
+const DIE_FACE = { 1:'⚀', 3:'⚂', 4:'⚃', 6:'⚅' };
+function renderDice(p){
+  if(p._boneShow==null) return '';
+  return `<span class="die">${DIE_FACE[p._boneShow] || '🎲'}</span>`;
+}
 function renderPlayers(){
   // Crew row (BOARD-06): name, temperament, favor, alive/starving/dead status per card.
   // The shared hold (🛢️) is deliberately NOT repeated here — it's rendered exactly once,
@@ -479,7 +489,7 @@ function renderPlayers(){
     c.innerHTML = `<div class="nm">${p.name} <span class="badge">${badge}</span></div>
       <div class="res"><span>🍖 ${p.satchel}</span><span>🫒 ${p.favor}</span><span class="tok">${statusTok(p)}</span></div>`;
     if(p._committing) c.appendChild(el('div','committing', p.isBot?'🤖 committing…':'✍️ choosing…'));
-    if(p._boneShow!=null) c.appendChild(el('div','bone', `🎲 ${p._boneShow}${p._delta?(' → '+p._delta):''}`));
+    if(p._boneShow!=null) c.appendChild(el('div','bone', `${renderDice(p)}${p._boneShow}${p._delta?(' → '+p._delta):''}`));
     const slot = el('div','ctrls'); slot.id='ctrl-'+p.id; c.appendChild(slot);
     host.appendChild(c);
   });
