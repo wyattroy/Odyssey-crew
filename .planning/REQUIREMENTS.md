@@ -51,6 +51,13 @@
 - [ ] **BALANCE-02**: A fixed multi-seed 0-human auto sweep is the acceptance bar: across the seed set, most games reach Ithaca with *some* crew alive, the hold/rations economy stays under real pressure (neither mass starvation nor trivial survival), and the run always terminates at a winner.
 - [ ] **BALANCE-03**: Cross-episode favor reconciliation confirms favor stays *contested* — cooperation (favor) remains the optimal path to *winning* while defection remains optimal only for *bare survival*; favor is neither dominated nor trivially maxed.
 
+### Economy & Verb Redesign (Phase 3 — emerged during discuss-phase 3; see 03-CONTEXT.md)
+
+- [ ] **ECON-01**: Fold the three-verb grammar into **two verbs (Abide / Dare)** — remove the Give path everywhere (engine, all island beats, board buttons, stakes preview). Abide serves the commons (always fills the hold; a high roll also earns favor); Dare transgresses for personal stash (high roll = unseen, low roll = caught → −favor). All island beats re-authored to two verbs.
+- [ ] **ECON-02**: Fold the peril tracks (world-anger + Poseidon's curse) into **favor** — remove `state.world` and `state.curse`; favor is the single divine currency; transgression costs favor; low **aggregate** crew favor triggers rougher crossings and the collective doom (Helios/Sirens catastrophe). Determinism preserved.
+- [ ] **ECON-03**: **Favor-as-lifeline revival** — a dead player may pay Charon (favor) to return on their turn; a crewmate may spend their favor to raise a bankrupt mate (generalized beyond the Hades stop). The permanent-death condition becomes favor bankruptcy, not starvation.
+- [ ] **ECON-04**: **Keep-the-crew-whole incentives** — more living crew makes the voyage easier (safer bag / shared hold / gentler perils) AND Ithaca's finale rewards a full crew, while never creating a dead-end (always resolves to a winner).
+
 ### Interactive Board (replaces the raw narration log)
 
 - [x] **BOARD-01**: The board shows the voyage visually — the boat advancing across the sea / island track through Troy → islands → Hades → Phaeacia → Ithaca.
@@ -91,7 +98,7 @@ Explicitly excluded for v1.1. Documented to prevent scope creep.
 | Networked multiplayer | Hotseat only; blind commit is simulated locally |
 | Browser storage (localStorage/sessionStorage) | All state in one in-memory object; reload = fresh game |
 | Player-to-player trading of rations or favor | Only inter-player transfer remains the Orpheus toll; favor moves only via the gods |
-| New verbs, currencies, or tracks | Locked at three verbs / two currencies / one world-track-per-episode; surface gaps as code comments |
+| Verbs/currencies beyond the Phase-3 model | Phase 3 SIMPLIFIED the design (discuss-phase 3): **two verbs (Abide/Dare)** and the peril tracks folded into favor — see ECON-01/02 + 03-CONTEXT.md. No verbs/currencies beyond stash 🍖 / hold 🛢️ / favor 🫒. |
 | Automated simulation/tuning harness ("Pastry-Pirates") | v1.1 hand-tunes via thematic payoffs; the machine-optimizing sweep is a later milestone (see SIM-01) |
 | Canvas/WebGL rendering engine | DOM+CSS (with inline SVG backdrop) is sufficient for the board's object count and keeps zero-dependency styling/accessibility |
 
@@ -123,6 +130,10 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | BALANCE-01 | Phase 3 | Pending |
 | BALANCE-02 | Phase 3 | Pending |
 | BALANCE-03 | Phase 3 | Pending |
+| ECON-01 | Phase 3 | Pending |
+| ECON-02 | Phase 3 | Pending |
+| ECON-03 | Phase 3 | Pending |
+| ECON-04 | Phase 3 | Pending |
 | BOARD-01 | Phase 4 | Complete |
 | BOARD-02 | Phase 4 | Complete |
 | BOARD-03 | Phase 4 | Complete |
@@ -135,15 +146,15 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 
 **Coverage:**
 
-- v1.1 requirements: 29 total
-- Mapped to phases: 29 ✓
+- v1.1 requirements: 33 total (29 original + 4 ECON added during discuss-phase 3)
+- Mapped to phases: 33 ✓
 - Unmapped: 0 ✓
 
 **Phase distribution:**
 
 - Phase 1 (Effect Engine & Sequential Resolution): 7 — EFFECT-01..04, RESOLVE-01..03
 - Phase 2 (Themed Island Content & Favor-Law Reconciliation): 6 — CONTENT-01..06
-- Phase 3 (Anchor Verb Retrofit & Balance Retune): 7 — ANCHOR-01..04, BALANCE-01..03
+- Phase 3 (Economy & Verb Redesign — Anchors + Balance): 11 — ANCHOR-01..04, BALANCE-01..03, ECON-01..04
 - Phase 4 (Interactive Board): 9 — BOARD-01..09
 
 ---
