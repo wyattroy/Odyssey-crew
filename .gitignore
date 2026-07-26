@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# Claude Code: local worktree checkouts and machine-local settings
+.claude/worktrees/
+.claude/settings.local.json
