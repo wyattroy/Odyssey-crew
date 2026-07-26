@@ -220,7 +220,8 @@ const DELTA_KEYS = ['you','crew','favor'];
 /* ---------------------------------------------------------------- CONFIG --- */
 const CONFIG = {
   players: 4,
-  holdStart: 6,
+  holdStart: 2,  // 03-07 balance retune: was 6 — a thinner starting commons makes the hold a
+                 // real early-voyage pressure point instead of a buffer nobody ever tests.
   meal: 1,
   boneWeights: { 1:0.10, 3:0.40, 4:0.40, 6:0.10 },   // weighted astragaloi
   // crossing.fullCrewAt/fullCrewWhiteBonus (D-07, ECON-04): the keep-the-crew-whole
@@ -236,7 +237,9 @@ const CONFIG = {
   // as Charon) or crewmate-pay (generalized Orpheus), now offered on ANY beat, not only at
   // the Hades stop. hadesToll is a distinct at-Hades modifier exposed for 03-07 to tune
   // (currently equal to toll — this plan only sets the shape, not the final numbers).
-  charon: { toll: 1, hadesToll: 1 },
+  charon: { toll: 2, hadesToll: 2 },  // 03-07: was {1,1} — a revival that costs more than a
+                                       // single favor point makes bringing a mate back a real
+                                       // trade-off against the finale, not a rounding error.
   // CONFIG.hades (ANCHOR-01, 03-05): the rites-scene's own thematic kickers, tier 0 (a
   // single scene, so no rising arc WITHIN the anchor itself — D-10's escalation is an
   // across-island shape, not a within-one-scene-anchor one). riteHold layers onto econD's
@@ -303,12 +306,19 @@ const CONFIG = {
   // CONFIG.econ — the single two-verb payoff surface (D-10, EFFECT-04): per-scene-tier
   // face maps read by econD() to build every Helios beats cell's `d`. tier 0/1/2 = an
   // episode's 1st/2nd/3rd scene; magnitudes are non-decreasing tier to tier on both
-  // roads — that IS the escalating arc. 03-07 tunes these; this plan only sets the shape.
+  // roads — that IS the escalating arc.
+  // 03-07 balance retune (D-09, BALANCE-02): abideHold pulled down a notch at every tier
+  // (was [{1:1,3:1,4:2,6:2},{1:1,3:2,4:2,6:3},{1:2,3:2,4:3,6:3}]) — the commons was staying
+  // full enough that a hold shortfall (the one mechanic that actually threatens a sailor
+  // with no personal stash) almost never happened; dareCaught was pulled down too (was
+  // [{1:-1},{1:-2,3:-1},{1:-3,3:-1}]) so a caught Dare still costs favor but doesn't leave
+  // the defect road so favor-poor it can no longer afford its own revival — see the tuning
+  // log in 03-07-SUMMARY.md for the measured effect of each move in isolation.
   econ: {
-    abideHold:  [ {1:1,3:1,4:2,6:2}, {1:1,3:2,4:2,6:3}, {1:2,3:2,4:3,6:3} ],
+    abideHold:  [ {1:0,3:1,4:1,6:2}, {1:1,3:1,4:2,6:2}, {1:1,3:2,4:2,6:3} ],
     abideFavor: [ {6:1}, {4:1,6:1}, {4:1,6:2} ],
     dareStash:  [ {3:1,4:2,6:3}, {3:1,4:3,6:4}, {3:2,4:4,6:6} ],
-    dareCaught: [ {1:-1}, {1:-2,3:-1}, {1:-3,3:-1} ],
+    dareCaught: [ {1:-1}, {1:-1,3:-1}, {1:-2,3:-1} ],
   },
   // CONFIG.divine — favor→world thresholds (D-05). Doom/bless thresholds scale PER
   // LIVING CREW MEMBER (the anti-spiral guard confirmed at the Task 3 decision gate):
@@ -317,7 +327,11 @@ const CONFIG = {
     calmPerMate: 3,       // aggregate crew favor per living mate at/above which seas are calm
     roughStep: 2,         // each `roughStep` of favor deficit below the calm line adds one blue marble
     maxExtraBlue: 6,      // cap on extra blue marbles salted into a crossing bag
-    doomFloorPerMate: 0,  // aggregate crew favor at/below (doomFloorPerMate * livingCount) triggers collective doom
+    doomFloorPerMate: 1,  // 03-07: was 0 — aggregate crew favor at/below (doomFloorPerMate *
+                           // livingCount) triggers collective doom; 0 meant doom needed the
+                           // crew's total favor at or below zero, a state a favor-earning
+                           // economy almost never reaches. 1 lets a genuinely favor-poor
+                           // (mostly-greedy) crew brush real collective catastrophe risk.
     blessFloorPerMate: 4, // aggregate crew favor at/above (blessFloorPerMate * livingCount) triggers the blessing branch
     doomMaxToll: 2,       // a doom catastrophe never takes more than this many sailors, and never the last living one
   },
