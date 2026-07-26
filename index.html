@@ -95,6 +95,12 @@
   #prompt .hint{color:var(--dim); font-size:.85rem; margin-bottom:8px}
   .passgate{text-align:center; padding:18px}
 
+  /* narration surface (BOARD-05): the current beat's story tell, sourced from the
+     same narrate() text the log records — the board's primary read surface. */
+  #narration{min-height:20px}
+  #narration .tell{font-size:1.12rem; line-height:1.5}
+  #narration .tell.empty{color:var(--dim); font-style:italic; font-size:.92rem}
+
   /* log */
   #log{max-height:300px; overflow-y:auto; font-size:.9rem; padding-right:6px}
   #log .e{padding:3px 0; border-bottom:1px solid rgba(255,255,255,.04)}
@@ -158,6 +164,7 @@
     <div class="card">
       <div class="players" id="players"></div>
     </div>
+    <div class="card" id="narration"></div>
     <div class="card">
       <div id="prompt"></div>
     </div>
@@ -411,7 +418,7 @@ const BEATS_META = [
 // fresh from `state` on each call — no parallel/cached position or status field is ever
 // introduced. Later plans (marble bag / dice / narration / action bar) hang their own
 // render<X>() off this same seam.
-function renderBoard(){ renderTrack(); renderStrip(); renderPlayers(); }
+function renderBoard(){ renderTrack(); renderStrip(); renderPlayers(); renderNarration(); }
 function render(){ renderBoard(); }
 
 function renderTrack(){
@@ -510,7 +517,19 @@ function renderLog(){
   }
   l.scrollTop = l.scrollHeight;
 }
-function clearBones(){ state.players.forEach(p=>{ p._boneShow=null; p._delta=null; p._committing=false; p._acting=false; }); }
+// BOARD-05: renders the current beat's story sentence prominently on the board.
+// Sourced ONLY from state._narration — a `_`-prefixed transient set by actPhase's
+// reveal loop at the SAME narrate()/log() call that writes the ship's-log line
+// (Pitfall 3: one narration source, never a second authored copy). No rnd()/pick()/
+// Math.random here — pure projection of already-decided state (BOARD-07).
+function renderNarration(){
+  const host = $('narration'); if(!host) return;
+  const n = state._narration;
+  host.innerHTML = n
+    ? `<div class="tell ${n.cls}">${n.html}</div>`
+    : `<div class="tell l-sys empty">The voyage awaits its next beat…</div>`;
+}
+function clearBones(){ state.players.forEach(p=>{ p._boneShow=null; p._delta=null; p._committing=false; p._acting=false; }); state._narration=null; }
 
 /* ---------------------------------------------------------------- PROMPT / INPUT --- */
 let pendingResolve = null;
@@ -757,7 +776,7 @@ async function eatPhase(){
   if(eaters.length===0) return;
   eaters.forEach(p=>p._committing=true); renderPlayers();
   await collectCommits(eaters, 'eat', {});
-  clearBones(); renderPlayers();
+  clearBones(); renderPlayers(); renderNarration();
 
   const satchelEaters = eaters.filter(p=>p.commit==='satchel');
   const holdReachers  = eaters.filter(p=>p.commit==='hold');
@@ -871,7 +890,7 @@ async function actPhase(env, scene, sceneIndex){
 
   clearBones();
   actors.forEach(p=>{ p._acting=true; p._committing=true; });
-  renderPlayers();
+  renderPlayers(); renderNarration();
   await collectCommits(actors, 'act', {env, scene, sceneIndex});
   actors.forEach(p=>p._committing=false); renderPlayers();
 
@@ -888,10 +907,13 @@ async function actPhase(env, scene, sceneIndex){
       // WR-01: honor the resolver's computed class (l-act applied / l-sys no-op /
       // l-bad denied) instead of narrate()'s flat 'l-act'. Table-fallback cells carry
       // no class (r.cls null), so fall back to narrate()'s default for those.
-      log(n.html, r.cls || n.cls);
+      const cls = r.cls || n.cls;
+      log(n.html, cls);
+      // BOARD-05: same html/cls just logged — one narration source (Pitfall 3).
+      state._narration = { html: n.html, cls };
     }
     p._delta = r.applied || 'no change';
-    renderPlayers();
+    renderPlayers(); renderNarration();
     await botPause();
   }
   // collective check for the scene
