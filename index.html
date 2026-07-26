@@ -188,6 +188,8 @@ const CONFIG = {
   fx: {
     tiny: 1,      // smallest nonzero payoff step (e.g. a single ration or favor point)
     small: 2,     // a modest payoff step
+    big: 4,       // a large payoff step (e.g. a Dare-6 hold bounty)
+    huge: 6,      // the largest payoff step — reserved for a scene's climactic Dare-6 cell
     penalty: -1,  // smallest nonzero cost/penalty step
   },
   // CONFIG.log — the single home for ship's-log line classes the effect resolver emits
@@ -838,33 +840,35 @@ const EPISODES = {
     scenes:[
       { name:'The Meadow', hook:'The herd gleams. Odysseus warns: touch nothing.',
         verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — restraint (the pious road)'}, give:{label:'Give — feed the hold'}},
-        // Tracer conversion (EFFECT-01/02): behavior-preserving — dare mirrors the old
-        // mkHeliosDare()/LAND_TABLE.dare deltas exactly, abide/give mirror LAND_TABLE's
-        // fallthrough. beats is checked before reskin/table in resolveEffect, so this
-        // scene now resolves entirely through the beats path.
+        // D-01 authoring anchor (user's verbatim Helios template, 02-CONTEXT.md
+        // <specifics>): Abide is inert except a 6 (a small forage gain + the Abide-6
+        // favor nod, D-05's default favor path); Dare-6 pays the full bounty (stash +2,
+        // hold +4); Dare-1 is seen by the Sun (world rises only — no positive favor,
+        // ever, on a Helios Dare). Scene 1 of 3 (hunger) — the mildest of the rising arc,
+        // see scenes 2/3 below.
         beats: {
           dare: {
-            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.penalty, favor:CONFIG.fx.penalty, world:CONFIG.fx.small},
-                tell:(p)=>`Seen by the Sun — the herd bellows in alarm, and Helios's wrath rises.` },
-            3:{ d:{you:CONFIG.fx.tiny},
-                tell:(p)=>`A quiet cut of beef, taken quickly and low.` },
-            4:{ d:{you:CONFIG.fx.small},
-                tell:(p)=>`A clean kill — no one stirs, but the herd is one fewer.` },
-            6:{ d:{you:CONFIG.fx.small, crew:CONFIG.fx.small},
-                tell:(p)=>`A feast for the whole crew, carved from stolen meat.` },
+            1:{ d:{world:CONFIG.fx.tiny}, cls:'l-bad',
+                tell:(p)=>`Seen by the Sun — the herd bellows, and Helios's wrath stirs.` },
+            3:{ d:{favor:CONFIG.fx.penalty}, cls:'l-bad',
+                tell:(p)=>`A quiet cut, eaten alone. Helios marks it — condemned, favor lost.` },
+            4:{ d:{you:CONFIG.fx.tiny},
+                tell:(p)=>`A clean kill, unseen — stash +1.` },
+            6:{ d:{you:CONFIG.fx.small, crew:CONFIG.fx.big},
+                tell:(p)=>`A clean kill, unseen — stash +2, hold +4.` },
           },
           abide: {
             1:{ d:{},
-                tell:(p)=>`The vow holds, and the belly stays empty.` },
-            3:{ d:{you:CONFIG.fx.tiny},
-                tell:(p)=>`Restraint pays a small, private due.` },
-            4:{ d:{you:CONFIG.fx.tiny, crew:CONFIG.fx.tiny},
-                tell:(p)=>`Patience feeds the sailor and steadies the hold.` },
-            6:{ d:{you:CONFIG.fx.tiny, crew:CONFIG.fx.tiny, favor:CONFIG.fx.tiny},
-                tell:(p)=>`Unshaken faith draws a nod from the gods themselves.` },
+                tell:(p)=>`Look for food, find nothing.` },
+            3:{ d:{},
+                tell:(p)=>`Pat a cow, trying not to see it as food.` },
+            4:{ d:{},
+                tell:(p)=>`Cast a line for fish; find nothing.` },
+            6:{ d:{you:CONFIG.fx.small, favor:CONFIG.fx.tiny}, cls:'l-favor',
+                tell:(p)=>`A patch of dandelions, belly filled — and a quiet nod from the gods.` },
           },
           give: {
-            1:{ d:{you:CONFIG.fx.penalty},
+            1:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
                 tell:(p)=>`A ration goes into the hold, and the giver goes without.` },
             3:{ d:{you:CONFIG.fx.penalty, crew:CONFIG.fx.tiny},
                 tell:(p)=>`Sharing thins one satchel to thicken the common store.` },
