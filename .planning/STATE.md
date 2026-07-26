@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 03
 current_phase_name: anchor-verb-retrofit-balance-retune
 status: executing
-stopped_at: Completed 03-03-PLAN.md (Cyclops/Lotus re-authored on two verbs)
-last_updated: "2026-07-26T19:57:45.989Z"
+stopped_at: Completed 03-04-PLAN.md (Sirens re-authored, favor law consolidated and audited)
+last_updated: "2026-07-26T20:14:42.081Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 03 (anchor-verb-retrofit-balance-retune) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 03 execution started
 
-Progress: [████████░░] 78%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Progress: [████████░░] 78%
 | Phase 03 P01 | 45min | 5 tasks | 4 files |
 | Phase 03 P02 | 55min | 2 tasks | 1 files |
 | Phase 03 P03 | 55min | 2 tasks | 1 files |
+| Phase 03 P04 | 50min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,8 @@ Recent decisions affecting current work:
 - [Phase ?]: revivalRound() generalized (D-06/ECON-03): called at top of every island scene and sea leg, plus Hades and deadEndCheck's favor-bankruptcy check — one shared favorRevive() path, four call sites
 - [Phase ?]: Cyclops's Dare may cost favor on a bad roll but never GRANT it anywhere; the stake's collective success does not take the sanctioned Dare-favor-grant exception
 - [Phase ?]: Lotus's free-meal magnitude (CONFIG.lotus.rations) repointed from a satchel bonus to a hold kicker via econD()'s extra, so the fruit now feeds the commons not the taker's belly
+- [Phase ?]: Sirens Dare-favor exception retired under two verbs — Dare's relationship to favor is a pure cost on every island, no exceptions
+- [Phase ?]: Consolidated ONE favor-law comment block above EPISODES; whole-game audit found zero currently-sanctioned exceptions and fixed a death-clawback bug in Cyclops's onDepart
 
 ### Pending Todos
 
@@ -123,6 +126,7 @@ Recent decisions affecting current work:
 - Known death-spiral (project memory `odyssey-crew-playtest-balance`): default constants produce a hold-economy collapse. Phase 3's multi-seed sweep is the exit gate that must confirm it is fixed and not over-corrected into trivial survival.
 - HARD constraint on every phase: single self-contained `index.html`, vanilla JS, no libraries/build/network/storage; `?seed=` determinism and the 0-human unattended run must survive each phase.
 - sweep.mjs 40 all-dead rate rose to 18% (7/40) after 03-02 vs 03-01's 0% baseline (an artifact of old silent population-culling, not true robustness) — 03-07 balance retune must retune the hold economy (CONFIG.holdStart/CONFIG.econ) so a crew's favor reserve sustains the now-persistent revival demand; see 03-02-SUMMARY.md Deviations and WINDOWS.md
+- sweep.mjs 80 (post-03-04): survival axis of D-09 still doesn't hold — greedy/balanced/pious all survive at ~97-100%; only the favor/win axis is contested (pious 10.6 vs greedy -2.1 avg favor, 13 distinct winner-favor values). 03-07 should pull CONFIG.econ.dareStash down and/or raise CONFIG.divine.doomFloorPerMate to restore survival risk on the defect road.
 
 ## Deferred Items
 
@@ -137,6 +141,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T19:57:45.978Z
-Stopped at: Completed 03-03-PLAN.md (Cyclops/Lotus re-authored on two verbs)
+Last session: 2026-07-26T20:14:29.628Z
+Stopped at: Completed 03-04-PLAN.md (Sirens re-authored, favor law consolidated and audited)
 Resume file: None
