@@ -2,42 +2,39 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Themed Episodes & Interactive Board
-current_phase: 03
-current_phase_name: Economy & Verb Redesign (Anchors + Balance)
-status: milestone-complete
-stopped_at: Phase 03 verified and complete — all 4 v1.1 phases done, milestone ready to close
-last_updated: "2026-07-26T22:10:00.000Z"
+status: Awaiting next milestone
+stopped_at: v1.1 shipped, archived and tagged — awaiting /gsd-new-milestone
+last_updated: "2026-07-26T23:00:00.000Z"
 last_activity: 2026-07-26
-last_activity_desc: Phase 03 complete and verified; v1.1 milestone fully executed (Phase 04 was completed earlier, out of roadmap order)
+last_activity_desc: Milestone v1.1 completed, audited, archived and tagged
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 18
   completed_plans: 18
+current_phase: null
+current_phase_name: null
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-25)
+See: .planning/PROJECT.md (updated 2026-07-26 after v1.1)
 
 **Core value:** The commons tension must actually fire — disaster emerges from the sum of private, individually-reasonable choices, while cooperation stays optimal for *winning* (favor) and defection stays optimal only for *bare survival*.
-**Current focus:** v1.1 milestone complete — ready to close out
+**Current focus:** Planning next milestone — run `/gsd-new-milestone`
 
 ## Current Position
 
-Phase: — (all 4 v1.1 phases complete)
+Phase: — (no active milestone)
 Plan: —
-Status: Milestone v1.1 complete — ready for `/gsd-complete-milestone`
-Last activity: 2026-07-26 — Phase 03 complete and verified
+Status: v1.1 shipped 2026-07-26 (tagged, archived). Awaiting `/gsd-new-milestone`.
+Last activity: 2026-07-26 — Milestone v1.1 audited, archived and tagged
 
-Note: Phase 04 (Interactive Board) was executed and verified *before* Phase 03,
-because the board depends only on Phase 1 and is a pure projection of state. Phase
-03's completion therefore closes the milestone rather than advancing to a next phase;
-`phase.complete` reported "next phase 04" purely from roadmap ordering.
-
-Progress: [██████████] 100%
+**v1.1 close-out:** 4 phases, 18 plans, 33/33 requirements, all phases verified.
+Audit status `tech_debt` (no blockers). See `milestones/v1.1-MILESTONE-AUDIT.md`
+and `RETROSPECTIVE.md`.
 
 ## Performance Metrics
 
@@ -89,76 +86,57 @@ Progress: [██████████] 100%
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+Full decision log lives in PROJECT.md Key Decisions (v1.1 decisions logged there with
+outcomes at milestone close). Per-plan decisions are archived in
+`milestones/v1.1-phases/*/SUMMARY.md`.
 
-- Roadmap: v1.1 is additive/refactor-friendly — extend existing `beats`/resolver, single `rng()` seam, and `LAND_TABLE`/`SEA_TABLE`/`reskin` data patterns; never a rewrite.
-- Roadmap: Effects-as-balance — the hand-tuned per-stage deltas ARE the balance retune (no simulation harness this pass); validated via a fixed multi-seed 0-human auto sweep.
-- Roadmap: Anchor retrofit (Hades/Phaeacia/Ithaca) is scoped as an engine-extension task, distinct from island content authoring, and must not regress validated v1.0 mechanics.
-- [Phase ?]: Beats engine (resolveEffect/narrate/validateBeats/CONFIG.fx) landed and proven on Helios Meadow (tracer) + Cyclops Wine (stateful, via fx escape hatch); resolveEffect falls back to reskin/LAND_TABLE/SEA_TABLE for all unconverted scenes
-- [Phase ?]: Verified via a scratchpad-only headless Node harness (no browser available); confirms deterministic seeded parity across 32+ seeds and the fail-loud validateBeats path, without adding any dependency to index.html
-- [Phase ?]: resolutionOrder(actors) — single fixed-turn-order seam (ascending seat id, no rnd()) governing both eatPhase and Act reveal-loop resolution against the shared hold; swap only this function for a future favor-weighted/turn-chip scheme
-- [Phase ?]: canAffordDraw(d) — shared deny-not-clamp feasibility gate; extended beyond resolveEffect's beats/table paths into mkHeliosDare and Cyclops 'The Stake' give-wine (the only other closures that draw directly from the hold) so the never-partially-applied guarantee (RESOLVE-02) holds uniformly
-- [Phase ?]: pickLowest and the eat-phase bone lot-cast fully retired; hold shortfall now resolves by fixed turn order, not chance
-- [Phase ?]: Helios beats fully authored (all 3 scenes) using only shared CONFIG.fx tiers (added big/huge); Dare-6 bounty escalates non-decreasingly scene to scene while Abide/Give stay flat
-- [Phase ?]: scratchpad/harness.mjs (vm-context headless Node harness) established as the reusable no-browser verification tool for the rest of phase 2
-- [Phase ?]: Cyclops scene 2 keeps collectiveCheck: stakeCheck seam — per-cell beats narrate individual heave/brace/pour, stakeCheck owns the collective threshold + (no-favor) escape-progress award
-- [Phase ?]: Cyclops scene 3 escape uses faces 3/4 (40% weight) as primary triggers, not face 6, per Pitfall 11 (no rare-face-only good outcome)
-- [Phase ?]: Extended Cyclops's no-favor convention to Abide across all 3 scenes (not just Dare) — Cyclops reads as survival/cunning throughout, distinct from Helios's Abide-6 favor-nod pattern
-- [Phase ?]: Sirens Dare face 1 (zero favor) is the wreck-risk locus: extra world-anger in all three scenes plus a direct hold cost from Scene 2 onward, escalating the lure from mystical to physical.
-- [Phase ?]: Sirens Abide grants zero favor on all faces across all three scenes — a deliberate, documented departure from the general Abide-6-favor default (D-05), since the disciplined choice here should pay nothing.
-- [Phase ?]: Retired sirensReskin() entirely; all three Sirens scenes now resolve via beats with the Dare-favor grant flagged in-data as the single sanctioned D-05 exception.
-- [Phase ?]: Lotus Abide/Dare semantics inverted per D-04 (Abide=risky eat-the-lotus, Dare=safe haul-back); third and final shipped Dare-favor violation closed (D-05)
-- [Phase ?]: Whole-game favor-law + asymmetry audit found zero unflagged violations across all four islands; Sirens remains the sole sanctioned Dare-favor exception, Lotus's D-04 verb-label inversion and Helios's restraint-bless are confirmed compliant-by-design (not violations); no index.html changes required.
-- [Phase 4]: renderBoard() established as the single board orchestrator seam, called from the existing render() — later Phase 4 plans (marble bag, dice, narration, action bar, masking) hang their own render<X>() sub-functions off this same seam rather than adding new render() call sites.
-- [Phase 4]: renderBag()/renderDice() read only reveal-gated/pure-state transients (state.crossing.bag, state.crossing._lastDrawn, p._boneShow) — never the pre-rolled p.lastBone — establishing the masking pattern later Phase 4 plans (action bar, log demotion) must follow.
-- [Phase 4]: promptButtons()'s board-vs-box placement now keys on seatId!=null alone (director mode no longer diverts buttons to the shared #prompt box) — every human decision kind (act/eat/troy/pride/revive/orpheus/patience) now renders on the board; directorMode's meaning stays scoped to collectCommits' masking flag.
-- [Phase 4]: state._narration (board-only transient) is set ONLY at the narrate()-driven log() call in actPhase's reveal loop, not every log() call — isolates the current beat's story tell from system/hook/flavor lines; cleared per-phase via the existing clearBones() reset.
-- [Phase 4]: BOARD-08 masking audit found every board sub-renderer already compliant with the reveal-gated seam (no logic change needed) — documented inline above collectCommits() as the confirmed invariant.
-- [Phase 4]: Ship's-log demoted into a <details id="logPanel"> panel (closed by default, synced to state.directorMode on game start + toggle change) — log()/renderLog()/state.log untouched (BOARD-09).
-- [Phase ?]: Proceed with the two-verb fold (D-01/D-02/D-03) and the currency fold (D-04/D-05) at Task 2/3 decision gates (auto-approved, auto mode active)
-- [Phase ?]: CONFIG.divine first-pass values (calmPerMate:3, roughStep:2, maxExtraBlue:6, doomFloorPerMate:0, blessFloorPerMate:4, doomMaxToll:2) set non-degenerate, tuned later in 03-07
-- [Phase ?]: CONFIG.charon = {toll:1, hadesToll:1} (Claude's Discretion, tuned later in 03-07) — distinct at-Hades modifier exposed, currently equal to the general toll
-- [Phase ?]: CONFIG.crossing.fullCrewAt = 3 (near-full, not full-crew-only) per D-07's own framing
-- [Phase ?]: revivalRound() generalized (D-06/ECON-03): called at top of every island scene and sea leg, plus Hades and deadEndCheck's favor-bankruptcy check — one shared favorRevive() path, four call sites
-- [Phase ?]: Cyclops's Dare may cost favor on a bad roll but never GRANT it anywhere; the stake's collective success does not take the sanctioned Dare-favor-grant exception
-- [Phase ?]: Lotus's free-meal magnitude (CONFIG.lotus.rations) repointed from a satchel bonus to a hold kicker via econD()'s extra, so the fruit now feeds the commons not the taker's belly
-- [Phase ?]: Sirens Dare-favor exception retired under two verbs — Dare's relationship to favor is a pure cost on every island, no exceptions
-- [Phase ?]: Consolidated ONE favor-law comment block above EPISODES; whole-game audit found zero currently-sanctioned exceptions and fixed a death-clawback bug in Cyclops's onDepart
-- [Phase ?]: Hades' Abide plays the FAVOR LAW straight (no flagged exception) — the dead pointing out overlooked resources reads naturally as a hold gain
-- [Phase ?]: Hades' Dare glimpse lives in fx (calling shared revealNextIsland()), not d — d still traces to econD() per the acceptance bar
-- [Phase ?]: Phaeacia's Court runs at tier 1 (not tier 0) per its late-voyage framing (D-10)
-- [Phase ?]: Ithaca's Scene 1 (Beggar) endure/reveal is a direct fx-based retrofit of the old bespoke branch — same endureBonus/patiencePenalty magnitudes, applied unconditionally per face via the beats cell's fx
-- [Phase ?]: Ithaca's homecoming reward scales by homecomingPerMate * livingCount() (not flat) — full-crew supremacy is literal arithmetic; lands strictly after the pot split so it never gates eligibility/qualification/the pot
-- [Phase ?]: Anchor bot policy (Hades/Phaeacia/Ithaca) is now keyed on scene-object identity against ANCHORS.<id>.scenes, not ep.id, since state.episode stays null throughout every anchor's own verb scene
-- [Phase ?]: 03-06: zero-qualifier bow-floor fallback proven correct via a constructed probe (forced low favor) but does not fire naturally in the current pre-03-07 economy — carried forward as balance-tuning evidence, not a defect
-- [Phase ?]: Phase 3 balance retune (03-07): tuned holdStart/charon.toll/econ.abideHold/econ.dareCaught/divine.doomFloorPerMate together — sweep.mjs 80/200 --assert now PASS (0% all-dead, 93-94% full-crew, real survivor variance, favor stays 8-10x contested pious-vs-greedy)
-- [Phase ?]: PROJECT.md updated to describe the shipped two-verb/one-divine-currency game (D-11); retired three-verb/peril-track mechanics dated as v1.0 history, not deleted
+No decisions carried forward — next milestone starts fresh.
 
 ### Pending Todos
 
-- Phase 4 (all 4 plans: 04-01 board tracer, 04-02 crossing strip, 04-03 action bar + narration, 04-04 masking audit + log demotion + final pass) was executed out-of-order ahead of Phase 3 per explicit direction. Phase 3 (Anchor Verb Retrofit & Balance Retune) remains unstarted and is still next in ROADMAP.md's numeric execution order (1 → 2 → 3 → 4); every Phase 4 plan's Task 3 (checkpoint:human-verify, gate="blocking") — including 04-04's masking click-test, log-panel check, and browser determinism run — still needs an orchestrator click-test/screenshot pass to fully close out Phase 4 visually.
+None. (The prior entry — Phase 4 executed out of order with open human-verify
+checkpoints — is resolved: Phase 3 completed and verified, and Phase 4's checkpoints
+were closed by the browser click-test recorded in `04-VERIFICATION.md`.)
 
 ### Blockers/Concerns
 
-- Known death-spiral (project memory `odyssey-crew-playtest-balance`): default constants produce a hold-economy collapse. Phase 3's multi-seed sweep is the exit gate that must confirm it is fixed and not over-corrected into trivial survival.
-- HARD constraint on every phase: single self-contained `index.html`, vanilla JS, no libraries/build/network/storage; `?seed=` determinism and the 0-human unattended run must survive each phase.
-- sweep.mjs 40 all-dead rate rose to 18% (7/40) after 03-02 vs 03-01's 0% baseline (an artifact of old silent population-culling, not true robustness) — 03-07 balance retune must retune the hold economy (CONFIG.holdStart/CONFIG.econ) so a crew's favor reserve sustains the now-persistent revival demand; see 03-02-SUMMARY.md Deviations and WINDOWS.md
-- sweep.mjs 80 (post-03-04): survival axis of D-09 still doesn't hold — greedy/balanced/pious all survive at ~97-100%; only the favor/win axis is contested (pious 10.6 vs greedy -2.1 avg favor, 13 distinct winner-favor values). 03-07 should pull CONFIG.econ.dareStash down and/or raise CONFIG.divine.doomFloorPerMate to restore survival risk on the defect road.
+Resolved during v1.1:
+
+- ~~Death-spiral from default constants~~ — fixed by the Phase 3 two-verb/one-currency
+  redesign plus the 03-07 retune. `sweep.mjs 80/200 --assert` now passes every D-09
+  target (0% all-dead, down from ~50% of seeds).
+- ~~18% all-dead rate after 03-02~~ — closed by the 03-07 balance retune.
+
+Still open, carried into the next milestone:
+
+- **HARD constraint, every phase:** single self-contained `index.html`, vanilla JS, no
+  libraries/build/network/storage; `?seed=` determinism and the 0-human unattended run
+  must survive each phase.
+- **Thin survival margin.** The survival axis of D-09 holds only directionally — greedy
+  98% alive vs pious 96%. Favor is well contested (~9x spread), but "cooperation is
+  fragile" is not yet dramatic. 03-07 tried and correctly stopped: raising
+  `charon.toll` moved the gap the wrong way. The remaining levers (bot AI, the
+  commons-sharing mechanic) were deliberately out of v1.1 scope.
+- **Live site serves v1.0.** `wyattroy.github.io/Odyssey-crew` publishes from main's
+  root, which still holds the v1.0 prototype. Shipping v1.1 is unclaimed work.
 
 ## Deferred Items
 
-Items acknowledged and carried forward from previous milestone close:
-
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
-| Simulation | SIM-01 batch "Pastry-Pirates" tuning harness | Deferred | v1.1 start |
-| Simulation | SIM-02 automated balance regression dashboard | Deferred | v1.1 start |
-| Polish | POLISH-01 production art/sound beyond emoji + CSS | Deferred | v1.1 start |
-| Polish | POLISH-02 additional episodes beyond the four worked islands | Deferred | v1.1 start |
+| Simulation | SIM-01 batch "Pastry-Pirates" tuning harness | Deferred | v1.1 start, re-deferred at v1.1 close |
+| Simulation | SIM-02 automated balance regression dashboard | Deferred | v1.1 start, re-deferred at v1.1 close |
+| Polish | POLISH-01 production art/sound beyond emoji + CSS | Deferred | v1.1 start, re-deferred at v1.1 close |
+| Polish | POLISH-02 additional episodes beyond the four worked islands | Deferred | v1.1 start, re-deferred at v1.1 close |
+| Bookkeeping | 01-VERIFICATION.md still reads `behavior_unverified: 2` (both closed downstream by parity.mjs + 03-BROWSER-CHECK.md) | Deferred | v1.1 close |
+| Bookkeeping | 02-REVIEW.md still reads `issues_found` on a critical Phase 3 resolved by deleting the code it described | Deferred | v1.1 close |
 
 ## Session Continuity
 
-Last session: 2026-07-26T21:32:33.600Z
-Stopped at: Completed 03-07-PLAN.md (balance retune + PROJECT.md truth-up — phase 3 functionally complete)
+Last session: 2026-07-26
+Stopped at: v1.1 milestone closed — audited, archived, tagged
 Resume file: None
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
