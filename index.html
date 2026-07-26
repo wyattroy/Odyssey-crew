@@ -174,7 +174,7 @@ const CONFIG = {
   phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1 },
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
   lotus:   { rations:2, struckOn:[1] },               // eating lotus: +rations; these faces strand you
-  sirens:  { doomAt:6, listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1 },
+  sirens:  { doomAt:6, listenFavor:{1:0, 3:1, 4:2, 6:3}, worldPerListen:2, bindReduce:1, wreckWorldExtra:1, wreckCrew:1 },
   helios:  { herd:12, doomAt:7, restraintBless:2, blessAt:2 },
   cyclops: { need:3, drunkNeeded:2, stakeThreshold:2 },
   bot: {
@@ -1097,16 +1097,126 @@ const EPISODES = {
   sirens: {
     id:'sirens', title:'The Sirens', trackName:'The Rocks', worldStart:0, doomAt:CONFIG.sirens.doomAt,
     hook:'A song of all knowledge drifts over the water. To hear it is glory; to steer toward it is death on the reef.',
+    // D-03/D-05: Sirens is the ONE SANCTIONED Dare-favor exception in the whole game.
+    // Every other island's Dare grants NO favor (Cyclops, Helios, Lotus are all
+    // reconciled off it) — here, and only here, Dare (unstopping your ears to hear
+    // the song) pays real kleos via CONFIG.sirens.listenFavor[face], because daring
+    // the Sirens' song IS the myth's whole point: the gods reward the boldness of
+    // hearing what kills lesser men. The cost is real too — every listen raises the
+    // Rocks (state.world) via CONFIG.sirens.worldPerListen, and the worst face (1,
+    // which pays zero favor) is a wreck risk: extra world-anger via
+    // CONFIG.sirens.wreckWorldExtra and, from Scene 2 on, a crew cost via
+    // CONFIG.sirens.wreckCrew as the lure grows physical. Abide (bound to the mast)
+    // is deliberately NOT the default favor path here — it inverts the general D-05
+    // law on purpose: safe and thin, no gain, because the disciplined choice is to
+    // hear nothing at all. Give (binding/plugging a mate) pushes the Rocks back at a
+    // small satchel cost and never moves favor, per the general law. DO NOT copy the
+    // Dare-favor grant to any other island — Plan 05's favor-law audit checks that
+    // Sirens remains the only exception.
     scenes:[
       { name:'The First Notes', hook:'Sweet and far. Wax in hand, rope on the mast.',
         verbs:{dare:{label:'Dare — unstop your ears and listen'}, abide:{label:'Abide — be bound to the mast'}, give:{label:'Give — bind/stopper a mate'}},
-        reskin:sirensReskin() },
+        // Scene 1 of 3 (distant song, mildest of the rising arc, D-09). Dare pays
+        // CONFIG.sirens.listenFavor[face] kleos (the flagged D-05 exception above) and
+        // raises the Rocks by CONFIG.sirens.worldPerListen; face 1 (zero favor) is
+        // already a wreck risk, raising the Rocks further still.
+        beats: {
+          dare: {
+            1:{ d:{world:CONFIG.sirens.worldPerListen+CONFIG.sirens.wreckWorldExtra}, cls:'l-bad',
+                tell:(p)=>`Ears unstopped for a heartbeat — only a snatch of melody drifts by. No glory in it, and the ship edges nearer the Rocks.` },
+            3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen}, cls:'l-favor',
+                tell:(p)=>`A few clear notes reach you — kleos worth having, and the Rocks creep closer.` },
+            4:{ d:{favor:CONFIG.sirens.listenFavor[4], world:CONFIG.sirens.worldPerListen}, cls:'l-favor',
+                tell:(p)=>`The song carries further than it should — good glory for the listening, the Rocks edge nearer still.` },
+            6:{ d:{favor:CONFIG.sirens.listenFavor[6], world:CONFIG.sirens.worldPerListen}, cls:'l-favor',
+                tell:(p)=>`Every word lands whole and true — rich kleos for the risk, and the Rocks answer in kind.` },
+          },
+          abide: {
+            1:{ d:{}, tell:(p)=>`Wax in your ears, rope at your wrists — the song is only a murmur you'll never hear.` },
+            3:{ d:{}, tell:(p)=>`Bound tight to the mast, you strain against the ropes and hear nothing.` },
+            4:{ d:{}, tell:(p)=>`The wax holds. Whatever they're singing, it isn't for you.` },
+            6:{ d:{}, tell:(p)=>`Lashed fast, eyes forward — safe, and none the wiser for it.` },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`You knot a mate's bonds a little tighter — the Rocks ease back.` },
+            3:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`A firm hand on a mate's wax and rope — the Rocks recede.` },
+            4:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`You check a mate's bonds are sound — the Rocks fall back a little.` },
+            6:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`Steady hands, a mate made safe — the Rocks recede further.` },
+          },
+        } },
       { name:'The Full Song', hook:'It swells — names, wars, the future. The ship leans toward the voices.',
         verbs:{dare:{label:'Dare — listen deeper'}, abide:{label:'Abide — stay bound'}, give:{label:'Give — plug a mate\'s ears'}},
-        reskin:sirensReskin() },
+        // Scene 2 of 3 (the pull strengthens) — Dare's world cost rises
+        // (worldPerListen + CONFIG.fx.tiny); face 1's wreck risk now also costs the
+        // crew (hold) via CONFIG.sirens.wreckCrew — the lure has grown physical, not
+        // just world-anger.
+        beats: {
+          dare: {
+            1:{ d:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny+CONFIG.sirens.wreckWorldExtra, crew:-CONFIG.sirens.wreckCrew}, cls:'l-bad',
+                tell:(p)=>`The song swells and pulls you under its spell — no glory in it, only the Rocks rising and a mate's grip torn loose.` },
+            3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny}, cls:'l-favor',
+                tell:(p)=>`Names, wars, the shape of your own fate — worth the hearing, though the ship leans harder toward the voices.` },
+            4:{ d:{favor:CONFIG.sirens.listenFavor[4], world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny}, cls:'l-favor',
+                tell:(p)=>`Whole verses now, secrets no living man should know — rich kleos, and the Rocks loom larger.` },
+            6:{ d:{favor:CONFIG.sirens.listenFavor[6], world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny}, cls:'l-favor',
+                tell:(p)=>`Every word cuts clean and true — glory beyond measure, and the ship leans hardest yet.` },
+          },
+          abide: {
+            1:{ d:{}, tell:(p)=>`The ropes bite harder as you strain toward the voices — still nothing gets through.` },
+            3:{ d:{}, tell:(p)=>`You grip the mast and shut your eyes — the song swells, and passes you by.` },
+            4:{ d:{}, tell:(p)=>`Wax and rope hold fast against the swelling chorus.` },
+            6:{ d:{}, tell:(p)=>`You endure, white-knuckled and deaf to it all — safe, still thin.` },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`You press fresh wax into a straining mate's ears — the Rocks ease back.` },
+            3:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`You lean on the ropes, holding a thrashing mate steady — the Rocks recede.` },
+            4:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`You plug a mate's ears against the swelling song — the Rocks fall back.` },
+            6:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`A mate saved from the worst of it — the Rocks recede further still.` },
+          },
+        } },
       { name:'The Reef', hook:'White water ahead. The song at its height.',
         verbs:{dare:{label:'Dare — one last listen'}, abide:{label:'Abide — endure'}, give:{label:'Give — haul on the oar'}},
-        reskin:sirensReskin() },
+        // Scene 3 of 3 (the rocks) — the climax. Dare's world cost peaks
+        // (worldPerListen + CONFIG.fx.small); face 1's wreck risk is now at its worst
+        // (that world cost plus wreckWorldExtra, plus the same crew cost) — this is
+        // the face most likely to push state.world to CONFIG.sirens.doomAt and
+        // trigger the existing reef-wreck onDepart path below.
+        beats: {
+          dare: {
+            1:{ d:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.small+CONFIG.sirens.wreckWorldExtra, crew:-CONFIG.sirens.wreckCrew}, cls:'l-bad',
+                tell:(p)=>`One last listen, too close to the white water — a mate loses their hold and the Rocks rush nearer still.` },
+            3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen+CONFIG.fx.small}, cls:'l-favor',
+                tell:(p)=>`Even now, even here, the song is worth the hearing — kleos at the very height of danger.` },
+            4:{ d:{favor:CONFIG.sirens.listenFavor[4], world:CONFIG.sirens.worldPerListen+CONFIG.fx.small}, cls:'l-favor',
+                tell:(p)=>`The full song, unbearably close — glory to last a lifetime, and the Rocks nearer than ever.` },
+            6:{ d:{favor:CONFIG.sirens.listenFavor[6], world:CONFIG.sirens.worldPerListen+CONFIG.fx.small}, cls:'l-favor',
+                tell:(p)=>`You hear it whole, at the reef's very edge — the richest kleos of the whole voyage.` },
+          },
+          abide: {
+            1:{ d:{}, tell:(p)=>`You endure, lashed to the mast as the reef roars past.` },
+            3:{ d:{}, tell:(p)=>`You hold fast through the worst of it, deaf and unmoved.` },
+            4:{ d:{}, tell:(p)=>`The ropes hold. So do you.` },
+            6:{ d:{}, tell:(p)=>`Safe to the last note — thin comfort, but comfort all the same.` },
+          },
+          give: {
+            1:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`You haul on the oar with everyone else, dragging the ship from the Rocks.` },
+            3:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`You throw your weight against the oar — the Rocks recede.` },
+            4:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`Every stroke matters now — the Rocks fall back.` },
+            6:{ d:{you:CONFIG.fx.penalty, world:-CONFIG.sirens.bindReduce},
+                tell:(p)=>`A clean, powerful stroke — the Rocks recede furthest of all.` },
+          },
+        } },
     ],
     onDepart(){
       if(state.world >= this.doomAt){
@@ -1139,13 +1249,6 @@ const EPISODES = {
     }
   },
 };
-function sirensReskin(){
-  return {
-    dare:(p,b)=>{ const f=CONFIG.sirens.listenFavor[b]||0; if(f){p.favor+=f; if(state.onIsland)p.islandFavorEarned+=f;} state.world+=CONFIG.sirens.worldPerListen; log(`${p.name} unstops their ears and listens 🎲${b} → +${f}🫒 kleos, the Rocks rise (+${CONFIG.sirens.worldPerListen}).`, f>0?'l-favor':'l-act'); return `+${f}🫒 · rocks+${CONFIG.sirens.worldPerListen}`; },
-    abide:(p,b)=>{ log(`${p.name} stays bound to the mast 🎲${b}.`,'l-sys'); return 'bound'; },
-    give:(p,b)=>{ if(p.satchel>0)p.satchel--; state.world=Math.max(0,state.world-CONFIG.sirens.bindReduce); log(`${p.name} binds a mate / plugs their ears 🎲${b} → the Rocks recede (−${CONFIG.sirens.bindReduce}).`,'l-good'); return `rocks−${CONFIG.sirens.bindReduce}`; },
-  };
-}
 function lotusEat(p,b){
   p.satchel += CONFIG.lotus.rations;
   let extra='';
