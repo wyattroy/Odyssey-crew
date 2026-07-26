@@ -583,7 +583,9 @@ function renderSetup(){
       TEMPERAMENTS.forEach(t=>{ const o=el('option',null,tempIcon[t]); o.value=t; if(t===setupSeats[i].temperament)o.selected=true; sel.appendChild(o); });
       sel.onchange = e => setupSeats[i].temperament = e.target.value;
       const roll = el('button',null,'🎲'); roll.title='re-roll temperament';
-      roll.onclick = ()=>{ setupSeats[i].temperament = pick(TEMPERAMENTS); renderSetup(); };
+      // Pre-game UI: `state` is still null here, so pick()/rnd() would throw on state.rng().
+      // Math.random directly — no ?seed= determinism contract exists before the voyage starts.
+      roll.onclick = ()=>{ setupSeats[i].temperament = TEMPERAMENTS[Math.floor(Math.random()*TEMPERAMENTS.length)]; renderSetup(); };
       wrap.appendChild(sel); wrap.appendChild(roll);
       c.appendChild(wrap);
     }
