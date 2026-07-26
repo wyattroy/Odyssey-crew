@@ -88,6 +88,8 @@
   .p .ctrls{margin-top:8px; display:flex; flex-direction:column; gap:6px;
     background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:10px; padding:8px}
   .p .ctrls button{width:100%; margin:0; font-size:1.02rem; padding:11px 12px; text-align:left}
+  .stakes{margin-top:6px; font-size:.8rem; font-weight:normal; color:#93a7bd; line-height:1.6; letter-spacing:.2px}
+  .stakes .dot{opacity:.35; margin:0 6px}
 
   /* ship's-log demotion (BOARD-09): a plain <details> panel — closed by default,
      opened when director mode is on. Markup wrapper only; log()/renderLog()/state.log
@@ -345,6 +347,34 @@ function applyDeltas(p, d){
   // same floor; beats-authored cells dropped it).
   if(d.world){ const b=state.world; state.world=Math.max(0,state.world+d.world); const act=state.world-b; if(act) parts.push(`${act>0?'+':''}${act} world`); }
   return parts.join(' · ');
+}
+// deltaStakes(d): PURE, read-only formatter of a beats cell's delta object into a compact
+// stakes string — mirrors applyDeltas' emoji vocab (🍖 satchel, 🛢️ hold, 🫒 favor, ☁️ doom)
+// but mutates NOTHING. Used only to PREVIEW per-roll consequences inside the action buttons
+// so a human can choose Dare/Abide/Give informed. (No RNG, no state — masking-safe: the
+// payoff table is public; only the roll itself stays hidden.)
+function deltaStakes(d){
+  if(!d) return '';
+  const parts=[];
+  if(d.you)   parts.push(`${d.you>0?'+':''}${d.you}🍖`);
+  if(d.crew)  parts.push(`${d.crew>0?'+':''}${d.crew}🛢️`);
+  if(d.favor) parts.push(`${d.favor>0?'+':''}${d.favor}🫒`);
+  if(d.world) parts.push(`${d.world>0?'+':''}${d.world}☁️`);
+  return parts.join(' ');
+}
+// stakesLine(vt): the per-face (1/3/4/6) preview row for ONE verb's beats table. Merges a
+// cell's `alwaysD` into its `d` (that penalty always lands), marks cells with an `fx` escape
+// hatch with a trailing ⋯ (extra effect not shown numerically), and renders '—' for no change.
+function stakesLine(vt){
+  if(!vt) return '';
+  const cells=[1,3,4,6].map(f=>{
+    const c=vt[f]; if(!c) return `🎲${f} —`;
+    const merged=Object.assign({}, c.d||{});
+    if(c.alwaysD) for(const k in c.alwaysD) merged[k]=(merged[k]||0)+c.alwaysD[k];
+    const s=deltaStakes(merged);
+    return `🎲${f} ${s||'—'}${typeof c.fx==='function'?' ⋯':''}`;
+  });
+  return `<div class="stakes">${cells.join('<span class="dot">·</span>')}</div>`;
 }
 
 /* logging */
@@ -645,11 +675,16 @@ async function askHuman(p, kind, ctx){
     const aL = lab&&lab.abide? lab.abide.label: (env==='sea'?'Abide — fish with a rod':'Abide — uphold the law (the favor road)');
     const gL = lab&&lab.give ? lab.give.label : 'Give — move a 🍖 into the hold';
     const giveIllegal = p.satchel < 1;
+    // Per-roll stakes preview (read from the scene's public beats table) so the choice is informed.
+    const bt = sc && sc.beats ? sc.beats : null;
+    const dS = bt ? stakesLine(bt.dare) : '';
+    const aS = bt ? stakesLine(bt.abide) : '';
+    const gS = bt ? stakesLine(bt.give) : '';
     return promptButtons(`${p.name}: your move`,
-      `Committed in secret. All throw bones together, then reveal one by one.`,
-      [ {label:`⚔️ ${dL}`, value:'dare', cls:'dare'},
-        {label:`🕊️ ${aL}`, value:'abide', cls:'abide'},
-        {label:`🤲 ${gL}`+(giveIllegal?' (no 🍖)':''), value:'give', cls:'give', disabled:giveIllegal} ], p.id);
+      `Committed in secret. All throw bones together, then reveal one by one. <span class="small">Each box shows what every 🎲 face grants.</span>`,
+      [ {label:`⚔️ ${dL}${dS}`, value:'dare', cls:'dare'},
+        {label:`🕊️ ${aL}${aS}`, value:'abide', cls:'abide'},
+        {label:`🤲 ${gL}`+(giveIllegal?' (no 🍖)':'')+gS, value:'give', cls:'give', disabled:giveIllegal} ], p.id);
   }
   if(kind==='pride'){
     return promptButtons(`${p.name}: the escape — do you boast?`,
