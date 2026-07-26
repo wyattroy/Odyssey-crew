@@ -2154,7 +2154,9 @@ async function runIsland(beat){
     render();
     await botPause();
   }
-  if(ep.onDepart) ep.onDepart.call(ep);
+  // The scene loop may have broken out because deadEndCheck() already ended the game;
+  // departure effects must not run past the final reckoning.
+  if(ep.onDepart && !state.over) ep.onDepart.call(ep);
   state.onIsland=false; state.episode=null;
   render();
 }
@@ -2393,6 +2395,12 @@ async function runIthaca(){
 // of a hand-rolled toll here. Only if that round still leaves the whole crew dead does this
 // log the explicit favor-bankruptcy line and finish the game.
 async function deadEndCheck(){
+  // Hard gate: once the game is over, never re-run revival. revivalRound() can raise a
+  // human prompt via promptButtons(), which writes the SAME #prompt node finishGame()
+  // renders the final reckoning into — and finishGame() self-guards on state.over, so it
+  // would never re-render. Without this line a post-finish call clobbers the verdict
+  // screen with a stray, inert revival prompt (a dead end, which D-06/ECON-04 forbid).
+  if(state.over) return true;
   if(livingCount()>0) return false;
   await revivalRound();
   if(livingCount()>0) return false;
