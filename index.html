@@ -247,7 +247,19 @@ const CONFIG = {
   // per the FAVOR LAW below (Abide is the only favor road, unexceptioned).
   hades: { riteHold: 1, direFavorExtra: 1 },
   troy: { min:1, max:6 },                              // take t → +t rations, +(7-t) favor
-  phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1 },
+  // phaeacia: giftPerPlayer/poolFloor/poolCap/fullGiftRations/lesserGiftRations are the
+  // UNCHANGED Scene 3 song's favor-weighted, gifts-only bone-pool payout (03-05 Task 2 —
+  // do not touch). xeniaGift/courtGiftBonus/breachFavorExtra (ANCHOR-02, 03-05) are the
+  // NEW Scene 2 court verb-scene's own thematic kickers, tier 1 (this anchor sits late in
+  // the voyage, so its stakes read above an opening island's, D-10). xeniaGift layers onto
+  // econD's abideHold (the modest guest-gift into the hold when hospitality is accepted
+  // graciously); courtGiftBonus layers onto econD's dareStash (the bigger personal haul
+  // when a boast lands); breachFavorExtra layers onto econD's dareCaught (the xenia-
+  // breach's added favor cost beyond the standard caught-cost). These are entirely
+  // separate from the song's own pool — the court's own favor grant (Abide's high roll)
+  // never touches the pool, and the pool never pays favor either way.
+  phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1,
+              xeniaGift:1, courtGiftBonus:2, breachFavorExtra:1 },
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
   // D-04: lotus.struckOn escalates scene-to-scene (taste -> drowse -> strand) — the
   // faces that take Abide (eating the fruit) from "just a meal" to "lotus-struck".
@@ -1810,6 +1822,40 @@ const ANCHORS = {
         } },
     ],
   },
+  // Phaeacia (ANCHOR-02, D-08b): the court's first-ever verb choice, layered ABOVE the
+  // unchanged welcome/song/gift-ride (see runPhaeacia below). Abide accepts hospitality
+  // graciously — xenia, the favor road, plays the FAVOR LAW straight. Dare boasts your
+  // deeds for a bigger personal gift, risking a xenia-breach on a low roll. Tier 1 (D-10 —
+  // this anchor sits late in the voyage, its stakes read above an opening island's).
+  phaeacia: {
+    id:'phaeacia', title:'The Court of Phaeacia',
+    scenes:[
+      { name:'The Court', hook:'The king\'s hall waits for your tale. Accept the gift graciously, or boast louder for a bigger one.',
+        verbs:{ dare:{label:'Dare — boast your deeds for a bigger gift'}, abide:{label:'Abide — accept hospitality graciously (xenia)'} },
+        beats: {
+          abide: {
+            1:{ d:econD('abide',1,1,{crew:CONFIG.phaeacia.xeniaGift}),
+                tell:(p)=>`A quiet word of thanks — modest, but the guest-gift still reaches the hold.` },
+            3:{ d:econD('abide',1,3,{crew:CONFIG.phaeacia.xeniaGift}),
+                tell:(p)=>`Gracious and unhurried — a fuller guest-gift for the hold.` },
+            4:{ d:econD('abide',1,4,{crew:CONFIG.phaeacia.xeniaGift}),
+                tell:(p)=>`A warm word for the king's hospitality — the hold grows further still.` },
+            6:{ d:econD('abide',1,6,{crew:CONFIG.phaeacia.xeniaGift}), cls:'l-favor',
+                tell:(p)=>`Xenia honored perfectly — the richest guest-gift yet, and the gods notice good manners.` },
+          },
+          dare: {
+            1:{ d:econD('dare',1,1,{favor:-CONFIG.phaeacia.breachFavorExtra}), cls:'l-bad',
+                tell:(p)=>`A boast too far — the hall cools, the gift shrinks to nothing, and the gods mark the xenia-breach. Favor lost.` },
+            3:{ d:econD('dare',1,3,{you:CONFIG.phaeacia.courtGiftBonus}),
+                tell:(p)=>`A half-landed tale — the court gives grudgingly, but a real personal gift regardless.` },
+            4:{ d:econD('dare',1,4,{you:CONFIG.phaeacia.courtGiftBonus}),
+                tell:(p)=>`A bolder tale lands well — a bigger personal gift finds its way to your satchel.` },
+            6:{ d:econD('dare',1,6,{you:CONFIG.phaeacia.courtGiftBonus}),
+                tell:(p)=>`The whole hall roars for the tale — the richest personal gift of the evening.` },
+          },
+        } },
+    ],
+  },
 };
 
 /* ---------------------------------------------------------------- VALIDATION --- */
@@ -2053,14 +2099,28 @@ async function revivalRound(atHades){
 
 async function runPhaeacia(){
   logBeat(`🏛️ Phaeacia — the gift-reckoning`);
-  flavor('The one house that feeds its guests. The gods read the favor you already carry and pay you in gifts, never in favor.');
+  flavor('The one house that feeds its guests. Accept graciously, or boast for a bigger prize — then let the court read the favor you already carry, and pay you only in gifts, never in favor.');
   const lc = livingCount();
-  // Scene 1: welcome, stores refill
+  // Scene 1: welcome, stores refill — UNCHANGED, scaled by living crew.
   const gift = CONFIG.phaeacia.giftPerPlayer * lc;
   state.hold += gift; log(`🎁 Scene 1 — Welcome: guest-gifts refill the hold (+${gift} → 🛢️ ${state.hold}).`,'l-good');
   renderStrip();
-  // Scene 2: the song / judgment
-  log(`🎵 Scene 2 — The song: each sailor lays their record before the court.`,'l-sys');
+  // Scene 2: The Court — NEW two-verb scene (ANCHOR-02), run through the SAME shared act
+  // path every island uses (Pitfall 9). Accept hospitality graciously (Abide, the favor
+  // road per the FAVOR LAW above EPISODES) or boast for a bigger personal gift (Dare,
+  // risking a xenia-breach). This scene's own favor movement is entirely separate from
+  // the Scene 3 song's pool below — the court itself never pays favor either way.
+  const pSc = ANCHORS.phaeacia.scenes[0];
+  logBeat(`Scene 2 — ${pSc.name}`);
+  log(`<span class="scene-hook">${pSc.hook}</span>`,'l-sys');
+  if(livingCount()>0) await actPhase('land', pSc, 0);
+  render();
+  // Scene 3: the song / judgment — UNCHANGED. LOAD-BEARING INVARIANT: this pool is
+  // favor-WEIGHTED (more accumulated favor buys more bone throws, clamped between
+  // poolFloor/poolCap) and gifts-ONLY (the court pays only rations/the gift-ride here,
+  // NEVER favor) — a future tuner must not "simplify" the clamp away or let this pool
+  // pay favor; that would turn the anchor into a favor pump breaking the win condition.
+  log(`🎵 Scene 3 — The song: each sailor lays their record before the court.`,'l-sys');
   for(const p of livingPl()){
     const n = Math.max(CONFIG.phaeacia.poolFloor, Math.min(CONFIG.phaeacia.poolCap, p.favor));
     const throws=[]; for(let i=0;i<n;i++) throws.push(throwBone());
@@ -2071,8 +2131,8 @@ async function runPhaeacia(){
       log(`${p.name} throws ${n} bone${n>1?'s':''} [${throws.join(',')}] — the court gives grudgingly: +${CONFIG.phaeacia.lesserGiftRations}🍖.`,'l-sys'); }
     await botPause();
   }
-  // Scene 3: gift-ride → skip next crossing (into Ithaca)
-  if(livingPl().some(p=>p._tollSkip)){ state.tollSkipNextCrossing=true; log(`🛶 Scene 3 — The gift-ride: the magic ship will skip the crossing to Ithaca.`,'l-good'); }
+  // Scene 4: gift-ride → skip next crossing (into Ithaca) — UNCHANGED.
+  if(livingPl().some(p=>p._tollSkip)){ state.tollSkipNextCrossing=true; log(`🛶 Scene 4 — The gift-ride: the magic ship will skip the crossing to Ithaca.`,'l-good'); }
   render();
 }
 
