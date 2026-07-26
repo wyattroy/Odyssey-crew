@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 03
 current_phase_name: anchor-verb-retrofit-balance-retune
 status: executing
-stopped_at: Completed 03-05-PLAN.md (Hades and Phaeacia retrofitted onto the two-verb grammar)
-last_updated: "2026-07-26T20:32:15.432Z"
+stopped_at: Completed 03-06-PLAN.md (Ithaca's finale retrofitted onto the two-verb grammar)
+last_updated: "2026-07-26T20:53:09.590Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 03 (anchor-verb-retrofit-balance-retune) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 03 execution started
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -76,6 +76,7 @@ Progress: [█████████░] 89%
 | Phase 03 P03 | 55min | 2 tasks | 1 files |
 | Phase 03 P04 | 50min | 2 tasks | 1 files |
 | Phase 03 P05 | 65 | 2 tasks | 1 files |
+| Phase 03 P06 | 55min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -120,6 +121,10 @@ Recent decisions affecting current work:
 - [Phase ?]: Hades' Abide plays the FAVOR LAW straight (no flagged exception) — the dead pointing out overlooked resources reads naturally as a hold gain
 - [Phase ?]: Hades' Dare glimpse lives in fx (calling shared revealNextIsland()), not d — d still traces to econD() per the acceptance bar
 - [Phase ?]: Phaeacia's Court runs at tier 1 (not tier 0) per its late-voyage framing (D-10)
+- [Phase ?]: Ithaca's Scene 1 (Beggar) endure/reveal is a direct fx-based retrofit of the old bespoke branch — same endureBonus/patiencePenalty magnitudes, applied unconditionally per face via the beats cell's fx
+- [Phase ?]: Ithaca's homecoming reward scales by homecomingPerMate * livingCount() (not flat) — full-crew supremacy is literal arithmetic; lands strictly after the pot split so it never gates eligibility/qualification/the pot
+- [Phase ?]: Anchor bot policy (Hades/Phaeacia/Ithaca) is now keyed on scene-object identity against ANCHORS.<id>.scenes, not ep.id, since state.episode stays null throughout every anchor's own verb scene
+- [Phase ?]: 03-06: zero-qualifier bow-floor fallback proven correct via a constructed probe (forced low favor) but does not fire naturally in the current pre-03-07 economy — carried forward as balance-tuning evidence, not a defect
 
 ### Pending Todos
 
@@ -145,6 +150,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T20:32:15.420Z
-Stopped at: Completed 03-05-PLAN.md (Hades and Phaeacia retrofitted onto the two-verb grammar)
+Last session: 2026-07-26T20:53:09.579Z
+Stopped at: Completed 03-06-PLAN.md (Ithaca's finale retrofitted onto the two-verb grammar)
 Resume file: None
