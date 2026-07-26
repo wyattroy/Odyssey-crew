@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 03
 current_phase_name: anchor-verb-retrofit-balance-retune
 status: executing
-stopped_at: Completed 03-04-PLAN.md (Sirens re-authored, favor law consolidated and audited)
-last_updated: "2026-07-26T20:14:42.081Z"
+stopped_at: Completed 03-05-PLAN.md (Hades and Phaeacia retrofitted onto the two-verb grammar)
+last_updated: "2026-07-26T20:32:15.432Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 03 (anchor-verb-retrofit-balance-retune) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 03 execution started
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Progress: [████████░░] 83%
 | Phase 03 P02 | 55min | 2 tasks | 1 files |
 | Phase 03 P03 | 55min | 2 tasks | 1 files |
 | Phase 03 P04 | 50min | 2 tasks | 1 files |
+| Phase 03 P05 | 65 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,9 @@ Recent decisions affecting current work:
 - [Phase ?]: Lotus's free-meal magnitude (CONFIG.lotus.rations) repointed from a satchel bonus to a hold kicker via econD()'s extra, so the fruit now feeds the commons not the taker's belly
 - [Phase ?]: Sirens Dare-favor exception retired under two verbs — Dare's relationship to favor is a pure cost on every island, no exceptions
 - [Phase ?]: Consolidated ONE favor-law comment block above EPISODES; whole-game audit found zero currently-sanctioned exceptions and fixed a death-clawback bug in Cyclops's onDepart
+- [Phase ?]: Hades' Abide plays the FAVOR LAW straight (no flagged exception) — the dead pointing out overlooked resources reads naturally as a hold gain
+- [Phase ?]: Hades' Dare glimpse lives in fx (calling shared revealNextIsland()), not d — d still traces to econD() per the acceptance bar
+- [Phase ?]: Phaeacia's Court runs at tier 1 (not tier 0) per its late-voyage framing (D-10)
 
 ### Pending Todos
 
@@ -141,6 +145,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T20:14:29.628Z
-Stopped at: Completed 03-04-PLAN.md (Sirens re-authored, favor law consolidated and audited)
+Last session: 2026-07-26T20:32:15.420Z
+Stopped at: Completed 03-05-PLAN.md (Hades and Phaeacia retrofitted onto the two-verb grammar)
 Resume file: None

@@ -40,8 +40,8 @@
 
 ### Anchor Content (full verb retrofit — Hades / Phaeacia / Ithaca)
 
-- [ ] **ANCHOR-01**: Hades is rebuilt onto the Dare/Abide/Give verb×roll grammar with thematic beats, without regressing the validated revival + peek mechanics.
-- [ ] **ANCHOR-02**: Phaeacia is rebuilt onto the verb grammar (it has no player verb choice today) with thematic beats, without regressing the validated favor-weighted gift-court payout (gifts only).
+- [x] **ANCHOR-01**: Hades is rebuilt onto the Dare/Abide/Give verb×roll grammar with thematic beats, without regressing the validated revival + peek mechanics.
+- [x] **ANCHOR-02**: Phaeacia is rebuilt onto the verb grammar (it has no player verb choice today) with thematic beats, without regressing the validated favor-weighted gift-court payout (gifts only).
 - [ ] **ANCHOR-03**: Ithaca's three-scene reversal finale is rebuilt onto the verb grammar with thematic beats, without regressing the validated reversal/reckoning mechanics.
 - [ ] **ANCHOR-04**: All validated v1.0 anchor invariants survive the retrofit — no dead-end states, revival economy intact, favor-weighted Phaeacia pool intact, finale always reaches a winner.
 
@@ -123,8 +123,8 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | CONTENT-04 | Phase 2 | Complete |
 | CONTENT-05 | Phase 2 | Complete |
 | CONTENT-06 | Phase 2 | Complete |
-| ANCHOR-01 | Phase 3 | Pending |
-| ANCHOR-02 | Phase 3 | Pending |
+| ANCHOR-01 | Phase 3 | Complete |
+| ANCHOR-02 | Phase 3 | Complete |
 | ANCHOR-03 | Phase 3 | Pending |
 | ANCHOR-04 | Phase 3 | Pending |
 | BALANCE-01 | Phase 3 | Complete |
