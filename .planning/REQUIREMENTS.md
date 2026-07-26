@@ -53,8 +53,8 @@
 
 ### Economy & Verb Redesign (Phase 3 — emerged during discuss-phase 3; see 03-CONTEXT.md)
 
-- [ ] **ECON-01**: Fold the three-verb grammar into **two verbs (Abide / Dare)** — remove the Give path everywhere (engine, all island beats, board buttons, stakes preview). Abide serves the commons (always fills the hold; a high roll also earns favor); Dare transgresses for personal stash (high roll = unseen, low roll = caught → −favor). All island beats re-authored to two verbs.
-- [ ] **ECON-02**: Fold the peril tracks (world-anger + Poseidon's curse) into **favor** — remove `state.world` and `state.curse`; favor is the single divine currency; transgression costs favor; low **aggregate** crew favor triggers rougher crossings and the collective doom (Helios/Sirens catastrophe). Determinism preserved.
+- [x] **ECON-01**: Fold the three-verb grammar into **two verbs (Abide / Dare)** — remove the Give path everywhere (engine, all island beats, board buttons, stakes preview). Abide serves the commons (always fills the hold; a high roll also earns favor); Dare transgresses for personal stash (high roll = unseen, low roll = caught → −favor). All island beats re-authored to two verbs.
+- [x] **ECON-02**: Fold the peril tracks (world-anger + Poseidon's curse) into **favor** — remove `state.world` and `state.curse`; favor is the single divine currency; transgression costs favor; low **aggregate** crew favor triggers rougher crossings and the collective doom (Helios/Sirens catastrophe). Determinism preserved.
 - [ ] **ECON-03**: **Favor-as-lifeline revival** — a dead player may pay Charon (favor) to return on their turn; a crewmate may spend their favor to raise a bankrupt mate (generalized beyond the Hades stop). The permanent-death condition becomes favor bankruptcy, not starvation.
 - [ ] **ECON-04**: **Keep-the-crew-whole incentives** — more living crew makes the voyage easier (safer bag / shared hold / gentler perils) AND Ithaca's finale rewards a full crew, while never creating a dead-end (always resolves to a winner).
 
@@ -130,8 +130,8 @@ Mapped to phases during roadmap creation (2026-07-25). Every v1.1 requirement is
 | BALANCE-01 | Phase 3 | Pending |
 | BALANCE-02 | Phase 3 | Pending |
 | BALANCE-03 | Phase 3 | Pending |
-| ECON-01 | Phase 3 | Pending |
-| ECON-02 | Phase 3 | Pending |
+| ECON-01 | Phase 3 | Complete |
+| ECON-02 | Phase 3 | Complete |
 | ECON-03 | Phase 3 | Pending |
 | ECON-04 | Phase 3 | Pending |
 | BOARD-01 | Phase 4 | Complete |

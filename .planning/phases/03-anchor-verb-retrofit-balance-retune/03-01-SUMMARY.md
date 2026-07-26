@@ -198,6 +198,12 @@ None - no external service configuration required.
 - Concern for 03-03/03-04: Cyclops/Sirens/Lotus's interim mechanical conversions are functionally valid but not thematically tuned — Sirens in particular has a net-negative Dare road in later scenes that needs deliberate re-authoring, not just number adjustment.
 - Concern for the orchestrator/next human session: Task 5's browser-based visual verification (button labels, stakes preview rendering, favor/seas card layout) has NOT been performed with an actual browser — only substituted automated/transcript evidence. A click-through pass at `http://localhost:8777/?seed=demo&humans=1&speed=550` is still owed before this plan's board-facing surface is fully confirmed.
 
+## Self-Check: PASSED
+
+All created/modified files verified present on disk (index.html, scratchpad/econcheck.mjs,
+scratchpad/parity.mjs, scratchpad/sweep.mjs, this SUMMARY.md). All task commit hashes
+(86a950f, a7d9566, 0b40bf3) verified present in `git log --oneline --all`.
+
 ---
 *Phase: 03-anchor-verb-retrofit-balance-retune*
 *Completed: 2026-07-26*
