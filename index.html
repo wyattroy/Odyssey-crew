@@ -89,6 +89,16 @@
     background:rgba(255,255,255,.04); border:1px solid var(--line); border-radius:10px; padding:8px}
   .p .ctrls button{width:100%; margin:0; font-size:1.02rem; padding:11px 12px; text-align:left}
 
+  /* ship's-log demotion (BOARD-09): a plain <details> panel — closed by default,
+     opened when director mode is on. Markup wrapper only; log()/renderLog()/state.log
+     underneath are untouched (Pitfall 3). */
+  #logPanel summary{cursor:pointer; list-style:none; font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    font-weight:600; font-size:1.05rem; color:var(--ink); padding:2px 0; user-select:none}
+  #logPanel summary::-webkit-details-marker{display:none}
+  #logPanel summary::before{content:'▸'; display:inline-block; width:1.1em; color:var(--dim); transition:transform .15s}
+  #logPanel[open] summary::before{content:'▾'}
+  #logPanel #log{margin-top:8px}
+
   /* prompt */
   #prompt{min-height:20px}
   #prompt .q{font-size:1.02rem; margin-bottom:6px}
@@ -169,11 +179,20 @@
       <div id="prompt"></div>
     </div>
     <div class="card">
-      <div class="row"><h3 class="grow">📜 Ship's log</h3>
+      <div class="row">
         <label class="small"><input type="checkbox" id="directorToggle"> director mode</label>
         <label class="small">speed <select id="botSpeedToggle"><option value="0">instant</option><option value="550">pause</option></select></label>
       </div>
-      <div id="log"></div>
+      <!-- BOARD-09: the transcript is demoted into a collapsible panel — closed by
+           default, opened when director mode is on ($('directorToggle').onchange and
+           the start-of-game sync below both set logPanel.open). NOT deleted: log()/
+           renderLog()/state.log write into the same #log div as before, so the
+           0-human seeded run still produces the full transcript regardless of
+           whether this panel is expanded (Pitfall 3). -->
+      <details id="logPanel">
+        <summary>📜 Ship's log</summary>
+        <div id="log"></div>
+      </details>
     </div>
   </div>
 </div>
@@ -389,7 +408,11 @@ $('startBtn').onclick = () => {
   $('seedTag').textContent = state.seed ? ('seed: '+state.seed) : '';
   $('directorToggle').checked = state.directorMode;
   $('botSpeedToggle').value = String(state.botSpeed);
-  $('directorToggle').onchange = e => state.directorMode = e.target.checked;
+  // BOARD-09: the log panel starts collapsed unless director mode is already on,
+  // and tracks the director toggle from then on (markup-only — state.log/renderLog()
+  // are unaffected by open/closed).
+  $('logPanel').open = state.directorMode;
+  $('directorToggle').onchange = e => { state.directorMode = e.target.checked; $('logPanel').open = state.directorMode; };
   $('botSpeedToggle').onchange = e => state.botSpeed = parseInt(e.target.value,10);
   render();
   runGame().catch(err=>{ console.error(err); log('<b>ENGINE ERROR:</b> '+err.message+' — see console','l-bad'); });
