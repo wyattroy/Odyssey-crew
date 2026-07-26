@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 03
 current_phase_name: anchor-verb-retrofit-balance-retune
 status: executing
-stopped_at: Completed 03-01-PLAN.md (two-verb/one-currency tracer)
-last_updated: "2026-07-26T19:14:21.705Z"
+stopped_at: Completed 03-02-PLAN.md (favor-lifeline revival + keep-the-crew-whole)
+last_updated: "2026-07-26T19:34:11.902Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 12
+  completed_plans: 13
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 03 (anchor-verb-retrofit-balance-retune) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 03 execution started
 
-Progress: [███████░░░] 67%
+Progress: [███████░░░] 72%
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Progress: [███████░░░] 67%
 | Phase 04 P03 | 15min | 2 tasks | 1 files |
 | Phase 04 P04 | 20min | 2 tasks | 1 files |
 | Phase 03 P01 | 45min | 5 tasks | 4 files |
+| Phase 03 P02 | 55min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,9 @@ Recent decisions affecting current work:
 - [Phase 4]: Ship's-log demoted into a <details id="logPanel"> panel (closed by default, synced to state.directorMode on game start + toggle change) — log()/renderLog()/state.log untouched (BOARD-09).
 - [Phase ?]: Proceed with the two-verb fold (D-01/D-02/D-03) and the currency fold (D-04/D-05) at Task 2/3 decision gates (auto-approved, auto mode active)
 - [Phase ?]: CONFIG.divine first-pass values (calmPerMate:3, roughStep:2, maxExtraBlue:6, doomFloorPerMate:0, blessFloorPerMate:4, doomMaxToll:2) set non-degenerate, tuned later in 03-07
+- [Phase ?]: CONFIG.charon = {toll:1, hadesToll:1} (Claude's Discretion, tuned later in 03-07) — distinct at-Hades modifier exposed, currently equal to the general toll
+- [Phase ?]: CONFIG.crossing.fullCrewAt = 3 (near-full, not full-crew-only) per D-07's own framing
+- [Phase ?]: revivalRound() generalized (D-06/ECON-03): called at top of every island scene and sea leg, plus Hades and deadEndCheck's favor-bankruptcy check — one shared favorRevive() path, four call sites
 
 ### Pending Todos
 
@@ -115,6 +119,7 @@ Recent decisions affecting current work:
 
 - Known death-spiral (project memory `odyssey-crew-playtest-balance`): default constants produce a hold-economy collapse. Phase 3's multi-seed sweep is the exit gate that must confirm it is fixed and not over-corrected into trivial survival.
 - HARD constraint on every phase: single self-contained `index.html`, vanilla JS, no libraries/build/network/storage; `?seed=` determinism and the 0-human unattended run must survive each phase.
+- sweep.mjs 40 all-dead rate rose to 18% (7/40) after 03-02 vs 03-01's 0% baseline (an artifact of old silent population-culling, not true robustness) — 03-07 balance retune must retune the hold economy (CONFIG.holdStart/CONFIG.econ) so a crew's favor reserve sustains the now-persistent revival demand; see 03-02-SUMMARY.md Deviations and WINDOWS.md
 
 ## Deferred Items
 
@@ -129,6 +134,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T19:14:21.694Z
-Stopped at: Completed 03-01-PLAN.md (two-verb/one-currency tracer)
+Last session: 2026-07-26T19:34:11.891Z
+Stopped at: Completed 03-02-PLAN.md (favor-lifeline revival + keep-the-crew-whole)
 Resume file: None

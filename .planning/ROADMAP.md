@@ -86,7 +86,7 @@ Plans (single self-contained index.html → each plan runs in its own wave, sequ
   5. Hades, Phaeacia and Ithaca all run on the two-verb grammar with their validated mechanics intact (peek + revival, gifts-only favor-weighted court, three-scene finale that always produces a winner).
   6. The fixed multi-seed 0-human sweep shows the intended tension: defect (greedy/dare) survives but wins little favor, cooperate (pious/abide) accumulates favor but is fragile, favor totals stay widely spread, every run terminates at a winner, and `?seed=` still reproduces identically.
 
-**Plans**: 1/7 plans executed
+**Plans**: 2/7 plans executed
 **UI hint**: yes (board action bar drops to two verbs; stakes preview follows)
 
 Plans (single self-contained index.html → each plan runs in its own wave, sequential; tracer-first):
@@ -97,7 +97,7 @@ Plans (single self-contained index.html → each plan runs in its own wave, sequ
 
 **Wave 2** *(blocked on Wave 1 — same file)*
 
-- [ ] 03-02-PLAN.md — Favor as lifeline: revival on any beat (self-pay or a crewmate pays), favor bankruptcy as the only permanent end, and a fuller crew easing the voyage (ECON-03, ECON-04)
+- [x] 03-02-PLAN.md — Favor as lifeline: revival on any beat (self-pay or a crewmate pays), favor bankruptcy as the only permanent end, and a fuller crew easing the voyage (ECON-03, ECON-04)
 
 **Wave 3** *(blocked on Wave 2 — same file)*
 
@@ -162,5 +162,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|-----------|----------------|--------|-----------|
 | 1. Effect Engine & Sequential Resolution | v1.1 | 2/2 | Complete    | 2026-07-25 |
 | 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 5/5 | Complete    | 2026-07-26 |
-| 3. Economy & Verb Redesign (Anchors + Balance) | v1.1 | 1/7 | In Progress|  |
+| 3. Economy & Verb Redesign (Anchors + Balance) | v1.1 | 2/7 | In Progress|  |
 | 4. Interactive Board | v1.1 | 4/4 | Complete    | 2026-07-26 |
