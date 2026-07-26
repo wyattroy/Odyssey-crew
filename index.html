@@ -90,6 +90,10 @@
   .p .ctrls button{width:100%; margin:0; font-size:1.02rem; padding:11px 12px; text-align:left}
   .stakes{margin-top:6px; font-size:.8rem; font-weight:normal; color:#93a7bd; line-height:1.6; letter-spacing:.2px}
   .stakes .dot{opacity:.35; margin:0 6px}
+  .stakes.rows{display:flex; flex-direction:column; gap:3px}
+  .stk-face{opacity:.6; margin-right:2px}
+  .stk-num{color:#b9c8da}
+  .stk-flav{font-style:italic; opacity:.9}
 
   /* ship's-log demotion (BOARD-09): a plain <details> panel — closed by default,
      opened when director mode is on. Markup wrapper only; log()/renderLog()/state.log
@@ -362,19 +366,28 @@ function deltaStakes(d){
   if(d.world) parts.push(`${d.world>0?'+':''}${d.world}☁️`);
   return parts.join(' ');
 }
-// stakesLine(vt): the per-face (1/3/4/6) preview row for ONE verb's beats table. Merges a
-// cell's `alwaysD` into its `d` (that penalty always lands), marks cells with an `fx` escape
-// hatch with a trailing ⋯ (extra effect not shown numerically), and renders '—' for no change.
-function stakesLine(vt){
+// stakesLine(vt, p): the per-face (1/3/4/6) preview for ONE verb's beats table. Merges a
+// cell's `alwaysD` into its `d` (that penalty always lands). Targeted hybrid: verbs whose
+// cells are purely numeric render COMPACT (inline, dot-separated); verbs with any `fx`
+// closure (effect not fully numeric — mostly Lotus) render one ROW per face showing the
+// number PLUS the authored flavor `tell(p)`, so the hidden risk/effect (e.g. lotus-struck)
+// is legible before you commit. Read-only: tell() closures are pure describers.
+function stakesLine(vt, p){
   if(!vt) return '';
-  const cells=[1,3,4,6].map(f=>{
-    const c=vt[f]; if(!c) return `🎲${f} —`;
-    const merged=Object.assign({}, c.d||{});
-    if(c.alwaysD) for(const k in c.alwaysD) merged[k]=(merged[k]||0)+c.alwaysD[k];
-    const s=deltaStakes(merged);
-    return `🎲${f} ${s||'—'}${typeof c.fx==='function'?' ⋯':''}`;
+  const faces=[1,3,4,6];
+  const merge=c=>{ const m=Object.assign({}, c.d||{}); if(c.alwaysD) for(const k in c.alwaysD) m[k]=(m[k]||0)+c.alwaysD[k]; return m; };
+  const anyFx = faces.some(f=>vt[f] && typeof vt[f].fx==='function');
+  if(!anyFx){
+    const cells=faces.map(f=>{ const c=vt[f]; if(!c) return `🎲${f} —`; return `🎲${f} ${deltaStakes(merge(c))||'—'}`; });
+    return `<div class="stakes">${cells.join('<span class="dot">·</span>')}</div>`;
+  }
+  const rows=faces.map(f=>{
+    const c=vt[f]; if(!c) return '';
+    const num=deltaStakes(merge(c));
+    let flav=''; if(typeof c.tell==='function'){ try{ flav=c.tell(p); }catch(e){ flav=''; } }
+    return `<div class="stk-row"><span class="stk-face">🎲${f}</span>${num?' <span class="stk-num">'+num+'</span>':''}${flav?' <span class="stk-flav">'+flav+'</span>':''}</div>`;
   });
-  return `<div class="stakes">${cells.join('<span class="dot">·</span>')}</div>`;
+  return `<div class="stakes rows">${rows.join('')}</div>`;
 }
 
 /* logging */
@@ -677,9 +690,9 @@ async function askHuman(p, kind, ctx){
     const giveIllegal = p.satchel < 1;
     // Per-roll stakes preview (read from the scene's public beats table) so the choice is informed.
     const bt = sc && sc.beats ? sc.beats : null;
-    const dS = bt ? stakesLine(bt.dare) : '';
-    const aS = bt ? stakesLine(bt.abide) : '';
-    const gS = bt ? stakesLine(bt.give) : '';
+    const dS = bt ? stakesLine(bt.dare, p) : '';
+    const aS = bt ? stakesLine(bt.abide, p) : '';
+    const gS = bt ? stakesLine(bt.give, p) : '';
     return promptButtons(`${p.name}: your move`,
       `Committed in secret. All throw bones together, then reveal one by one. <span class="small">Each box shows what every 🎲 face grants.</span>`,
       [ {label:`⚔️ ${dL}${dS}`, value:'dare', cls:'dare'},
