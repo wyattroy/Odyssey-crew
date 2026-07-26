@@ -750,18 +750,30 @@ function miss(p){
 // Every path below that would call applyDeltas first runs it through canAffordDraw() —
 // the shared "deny, never partially apply" feasibility gate (RESOLVE-02): a committed
 // cell whose net hold draw would overdraw the shared hold is denied as a whole (fx and
-// applyDeltas both skipped), never silently clamped to a partial amount.
+// applyDeltas both skipped), never silently clamped to a partial amount. A cell may also
+// carry `alwaysD` (WR-03) — a delta that lands regardless of that denial, for a bundled
+// non-hold penalty that must not be voided by an unrelated empty-hold `d` draw.
 const HOLD_DENIED_TELL = `The hold has nothing left to give — the move fails for want of it.`;
 function resolveEffect(p, scene, verb, bone, env){
   if(scene && scene.beats && scene.beats[verb] && scene.beats[verb][bone]){
     const cell = scene.beats[verb][bone];
+    // WR-03: a cell may declare `alwaysD` — a delta applied unconditionally, even when
+    // the cell's main `d` hold-draw below is denied by canAffordDraw. This lets a
+    // non-hold penalty bundled into the same cell as a `crew` draw (e.g. Sirens'
+    // world/doom cost alongside a wreck crew-loss) still land when the hold can't cover
+    // the crew draw, instead of being silently voided by the deny-whole-cell invariant
+    // (WR-05) that governs `d` itself — that invariant is correct and unchanged.
+    const alwaysApplied = cell.alwaysD ? applyDeltas(p, cell.alwaysD) : '';
     if(!canAffordDraw(cell.d)){
-      return { applied:'denied — hold empty', tell: HOLD_DENIED_TELL, cls: CONFIG.log.denied, logged:false, denied:true };
+      const applied = alwaysApplied || 'denied — hold empty';
+      const tell = alwaysApplied && typeof cell.tell === 'function' ? cell.tell(p) : HOLD_DENIED_TELL;
+      return { applied, tell, cls: cell.cls || CONFIG.log.denied, logged:false, denied:true };
     }
     if(typeof cell.fx === 'function') cell.fx(p, bone);
     const applied = applyDeltas(p, cell.d || {});
+    const combined = [alwaysApplied, applied].filter(Boolean).join(' · ');
     const tell = typeof cell.tell === 'function' ? cell.tell(p) : '';
-    return { applied, tell, cls: cell.cls || (applied ? CONFIG.log.act : CONFIG.log.none), logged:false };
+    return { applied: combined, tell, cls: cell.cls || (combined ? CONFIG.log.act : CONFIG.log.none), logged:false };
   }
   if(scene && scene.reskin && scene.reskin[verb]){
     const applied = scene.reskin[verb](p, bone);   // existing closure: mutates + logs + returns narration
@@ -1171,7 +1183,12 @@ const EPISODES = {
         // just world-anger.
         beats: {
           dare: {
-            1:{ d:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny+CONFIG.sirens.wreckWorldExtra, crew:-CONFIG.sirens.wreckCrew}, cls:'l-bad',
+            // WR-03: the world/doom penalty lives in `alwaysD` (not `d`) so it lands
+            // even when the hold can't cover the `crew` draw in `d` — otherwise
+            // canAffordDraw's deny-whole-cell invariant (WR-05, correct for `d` itself)
+            // would let an empty hold silently void the Rocks penalty too, making the
+            // worst face SAFER exactly when the ship is most precarious.
+            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny+CONFIG.sirens.wreckWorldExtra}, cls:'l-bad',
                 tell:(p)=>`The song swells and pulls you under its spell — no glory in it, only the Rocks rising and a mate's grip torn loose.` },
             3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen+CONFIG.fx.tiny}, cls:'l-favor',
                 tell:(p)=>`Names, wars, the shape of your own fate — worth the hearing, though the ship leans harder toward the voices.` },
@@ -1206,7 +1223,8 @@ const EPISODES = {
         // trigger the existing reef-wreck onDepart path below.
         beats: {
           dare: {
-            1:{ d:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.small+CONFIG.sirens.wreckWorldExtra, crew:-CONFIG.sirens.wreckCrew}, cls:'l-bad',
+            // WR-03: world/doom penalty in `alwaysD` — see Scene 2's identical note.
+            1:{ d:{crew:-CONFIG.sirens.wreckCrew}, alwaysD:{world:CONFIG.sirens.worldPerListen+CONFIG.fx.small+CONFIG.sirens.wreckWorldExtra}, cls:'l-bad',
                 tell:(p)=>`One last listen, too close to the white water — a mate loses their hold and the Rocks rush nearer still.` },
             3:{ d:{favor:CONFIG.sirens.listenFavor[3], world:CONFIG.sirens.worldPerListen+CONFIG.fx.small}, cls:'l-favor',
                 tell:(p)=>`Even now, even here, the song is worth the hearing — kleos at the very height of danger.` },
