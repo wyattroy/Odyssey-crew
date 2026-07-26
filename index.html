@@ -1142,6 +1142,56 @@ function verbWord(v, env){
   return env==='sea'?'fishes with a rod':'abides';
 }
 
+/* ---------------------------------------------------------------- FAVOR LAW --- */
+// THE FAVOR LAW (D-02/D-03/D-05/D-11, BALANCE-03, T-03-13 — consolidated 03-04 Task 2).
+// This is the ONE place the law is stated. Every island's own design-note comment below
+// points back here rather than restating it — if you are re-authoring a scene or adding
+// a payoff cell anywhere in EPISODES/ANCHORS, this is the contract it must hold to.
+//
+// THE LAW:
+//   - Abide is the favor road. Abide ALWAYS feeds the shared hold (the commons), and a
+//     HIGH roll additionally earns the gods' notice — favor (econD's abideHold/abideFavor,
+//     D-02). This is the only verb that GRANTS favor anywhere in the game.
+//   - Dare's only relationship to favor is a COST. Dare always feeds the actor's own
+//     stash; a LOW roll means the gods catch you and favor is lost (econD's dareStash/
+//     dareCaught, D-03). Dare NEVER grants favor — not on any island, not on any face.
+//   - Nothing else moves favor except four NAMED VOYAGE-LEVEL SOURCES, each a deliberate,
+//     game-structural event rather than a per-turn verb payoff:
+//       1. The Troy allocation (setupTroy) — restraint at the sack buys favor up front.
+//       2. An island's departure blessing — currently only Helios's onDepart (a full
+//          aggregate-favor blessing to all living crew when favor clears blessFloor()).
+//       3. The revival tolls (favorRevive, self-pay/Charon or crewmate-pay/Orpheus) —
+//          favor spent, never earned, to buy a life back.
+//       4. Ithaca's Reckoning pot (runIthaca) — the finale's one-time payout to whoever
+//          qualifies for and wins the bow contest.
+//   - The favor-road's own bookkeeping is survival-contingent: `p.islandFavorEarned`
+//     tracks the NET favor delta (positive or negative) a player accrues while on the
+//     current island. A player who dies before the island resolves forfeits any
+//     favor-road gains earned there (the death-clawback sites in Cyclops's
+//     polyphemusHunger/stakeCheck/onDepart all read Math.max(0, victim.islandFavorEarned)
+//     — a net-negative island, i.e. one where Dare's own costs already outweighed any
+//     Abide gains, is NEVER refunded on death; the clawback can only ever remove favor
+//     actually earned via the favor road, never hand back a Dare cost as a death bonus).
+//
+// SANCTIONED EXCEPTIONS (a list, kept here and ONLY here — an exception recorded
+// anywhere else is a copy-paste risk, not a second source of truth):
+//   - NONE, as of this plan. The three-verb model's single historical exception (a high
+//     Dare roll at the Sirens blessed with favor) is RETIRED under two verbs (03-04 Task
+//     1's Dare-favor decision — see EPISODES.sirens's own design note for the full
+//     reasoning). Cyclops's stake (03-03) and the Sirens retirement above were each the
+//     one place their own island COULD have taken a Dare-favor-grant exception, and
+//     neither does. The favor law is, as of 03-04, fully exceptionless: Abide is the
+//     only favor road, on every island, with no carve-outs.
+//   - A future author who adds one MUST add it here first, with a one-line rationale,
+//     before writing the cell that implements it (Pitfall 6 — favor-law drift).
+//
+// AUDIT (03-04 Task 2): every live `favor`-touching site in this file was walked and
+// classified into exactly one of the categories above; see 03-04-SUMMARY.md's audit
+// table for the full site-by-site record. One inconsistency was found and fixed as part
+// of this audit (Cyclops onDepart's death-clawback was missing the same
+// Math.max(0, islandFavorEarned) guard its sibling sites already had — see git history
+// for this plan's commit).
+
 /* ---------------------------------------------------------------- EPISODES --- */
 // A scene may provide verb labels, reskin handlers (custom resolve returning narration),
 // a collectiveCheck, plus episode-level onDepart / doom track.
@@ -1155,10 +1205,10 @@ const EPISODES = {
     // TRACER (03-01): Helios is the whole new economy proven end-to-end on ONE island —
     // every `d` below is built by econD(verb, tier, face[, extra]) from CONFIG.econ, so
     // no cell here hand-writes a bare number (EFFECT-04, Pitfall 12) and every later
-    // balance retune (03-07) tunes CONFIG.econ only. Abide (D-02) always feeds the hold;
-    // a high roll additionally earns favor. Dare (D-03) always risks the stash; a high
-    // roll is a clean kill unseen, a low roll means the Sun sees you and favor is lost.
-    // Magnitudes are non-decreasing tier 0→1→2 — that IS the escalating arc (D-10).
+    // balance retune (03-07) tunes CONFIG.econ only. Plays the favor law straight, no
+    // exceptions — see the FAVOR LAW block above EPISODES for the law itself and every
+    // sanctioned exception across all four islands. Magnitudes are non-decreasing tier
+    // 0→1→2 — that IS the escalating arc (D-10).
     scenes:[
       { name:'The Meadow', hook:'The herd gleams. Odysseus warns: touch nothing.',
         verbs:{dare:{label:'Dare — slaughter a cow'}, abide:{label:'Abide — restraint (the pious road)'}},
@@ -1266,11 +1316,11 @@ const EPISODES = {
   // Dare is the self-interested road (strike sober, drive the stake hardest, slip out
   // first) — real personal upside via econD's dareStash, and a low roll means the giant
   // (or, in Scene 3, the gods regardless) catches your recklessness: a favor COST via
-  // dareCaught. Per the acceptance bar: Dare never GRANTS favor anywhere on this island
-  // (the sanctioned exception would be the stake's success bonus below, and it is NOT
-  // taken — see stakeCheck()); Dare MAY cost favor on a bad roll, which is a cost, not a
-  // grant, and stays in-vocabulary. The drunk-counter fx (Scenes 1-2) and the escape-
-  // progress fx (Scenes 1 and 3) are load-bearing and carried through unchanged in shape.
+  // dareCaught. Plays the favor law straight — the stake's success bonus (see
+  // stakeCheck()) is the one place this island could have taken a Dare-favor exception,
+  // and it does NOT — see the FAVOR LAW block above EPISODES for the law and its (now
+  // empty) exception list. The drunk-counter fx (Scenes 1-2) and the escape-progress fx
+  // (Scenes 1 and 3) are load-bearing and carried through unchanged in shape.
   cyclops: {
     id:'cyclops', title:'The Cyclops', need:CONFIG.cyclops.need,
     hook:'Trapped in the cave, a boulder across the mouth. Polyphemus feeds on the idle. Only wine and cunning open the way.',
@@ -1389,7 +1439,12 @@ const EPISODES = {
     onDepart(){
       if(state.ep.progress < this.need){
         const victim = pick(livingPl());
-        if(victim){ log(`The crew never fully broke free — Polyphemus seizes ${victim.name} at the mouth of the cave.`,'l-die'); victim.status='dead'; victim.satchel=0; victim.favor=Math.max(0,victim.favor-victim.islandFavorEarned); }
+        // T-03-13 audit fix (03-04 Task 2): match polyphemusHunger()/stakeCheck()'s own
+        // clawback formula — Math.max(0, victim.islandFavorEarned) so a sailor who spent
+        // this island net-negative on Dare (favor cost, never a grant) is never REFUNDED
+        // that loss on death; the clawback can only ever remove favor actually earned via
+        // the favor road (Abide), never hand back a Dare cost as a death "bonus".
+        if(victim){ log(`The crew never fully broke free — Polyphemus seizes ${victim.name} at the mouth of the cave.`,'l-die'); victim.status='dead'; victim.satchel=0; victim.favor=Math.max(0,victim.favor-Math.max(0,victim.islandFavorEarned)); }
       } else {
         log(`The ship pulls away from the Cyclops's isle.`,'l-sys');
       }
@@ -1546,6 +1601,7 @@ const EPISODES = {
   // favor, never earning the gods' notice) via the unchanged lotusDareFx/lotusDareTell —
   // dragging the crew back is survival, not piety, so its `d` stays empty and its cost
   // lives entirely in the fx escape hatch, exactly as D-06's rescue mechanics require.
+  // Plays the favor law straight, no exceptions — see the FAVOR LAW block above EPISODES.
   lotus: {
     id:'lotus', title:'The Lotus-Eaters',
     hook:'A gentle shore. The natives offer honey-sweet fruit. One taste and home stops mattering.',
