@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 03
 current_phase_name: anchor-verb-retrofit-balance-retune
 status: executing
-stopped_at: Completed 03-02-PLAN.md (favor-lifeline revival + keep-the-crew-whole)
-last_updated: "2026-07-26T19:34:11.902Z"
+stopped_at: Completed 03-03-PLAN.md (Cyclops/Lotus re-authored on two verbs)
+last_updated: "2026-07-26T19:57:45.989Z"
 last_activity: 2026-07-26
 last_activity_desc: Phase 03 execution started
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -28,11 +28,11 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 ## Current Position
 
 Phase: 03 (anchor-verb-retrofit-balance-retune) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-07-26 — Phase 03 execution started
 
-Progress: [███████░░░] 72%
+Progress: [████████░░] 78%
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Progress: [███████░░░] 72%
 | Phase 04 P04 | 20min | 2 tasks | 1 files |
 | Phase 03 P01 | 45min | 5 tasks | 4 files |
 | Phase 03 P02 | 55min | 2 tasks | 1 files |
+| Phase 03 P03 | 55min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,8 @@ Recent decisions affecting current work:
 - [Phase ?]: CONFIG.charon = {toll:1, hadesToll:1} (Claude's Discretion, tuned later in 03-07) — distinct at-Hades modifier exposed, currently equal to the general toll
 - [Phase ?]: CONFIG.crossing.fullCrewAt = 3 (near-full, not full-crew-only) per D-07's own framing
 - [Phase ?]: revivalRound() generalized (D-06/ECON-03): called at top of every island scene and sea leg, plus Hades and deadEndCheck's favor-bankruptcy check — one shared favorRevive() path, four call sites
+- [Phase ?]: Cyclops's Dare may cost favor on a bad roll but never GRANT it anywhere; the stake's collective success does not take the sanctioned Dare-favor-grant exception
+- [Phase ?]: Lotus's free-meal magnitude (CONFIG.lotus.rations) repointed from a satchel bonus to a hold kicker via econD()'s extra, so the fruit now feeds the commons not the taker's belly
 
 ### Pending Todos
 
@@ -134,6 +137,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T19:34:11.891Z
-Stopped at: Completed 03-02-PLAN.md (favor-lifeline revival + keep-the-crew-whole)
+Last session: 2026-07-26T19:57:45.978Z
+Stopped at: Completed 03-03-PLAN.md (Cyclops/Lotus re-authored on two verbs)
 Resume file: None
