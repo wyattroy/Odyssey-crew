@@ -223,7 +223,15 @@ const CONFIG = {
   holdStart: 6,
   meal: 1,
   boneWeights: { 1:0.10, 3:0.40, 4:0.40, 6:0.10 },   // weighted astragaloi
-  crossing: { blueStart:5, whiteStart:1, whitePerDraw:1 },
+  // crossing.fullCrewAt/fullCrewWhiteBonus (D-07, ECON-04): the keep-the-crew-whole
+  // BONUS — shaped as extra white marbles (never fewer blue) when the living crew is at
+  // or above fullCrewAt, so more hands at the oars means land comes sooner. This composes
+  // with (never replaces) 03-01's low-favor blue-salting: a full, pious crew gets the
+  // shortest legs; a thin, impious crew gets the longest; a thin but PIOUS crew is never
+  // worse off than baseline, because crew count only ever adds white (see startCrossing).
+  // fullCrewAt:3 reads as "near-full" (3 or 4 of the 4 seats living) per D-07's own framing
+  // ("a near-full crew draws shorter, safer crossings") — not full-crew-only.
+  crossing: { blueStart:5, whiteStart:1, whitePerDraw:1, fullCrewAt:3, fullCrewWhiteBonus:2 },
   // CONFIG.charon (D-06, ECON-03): the favor toll that buys a life back — self-pay (reads
   // as Charon) or crewmate-pay (generalized Orpheus), now offered on ANY beat, not only at
   // the Hades stop. hadesToll is a distinct at-Hades modifier exposed for 03-07 to tune
@@ -397,6 +405,13 @@ function seasExtraBlue(){
   if(deficit <= 0) return 0;
   return Math.min(CONFIG.divine.maxExtraBlue, Math.ceil(deficit / CONFIG.divine.roughStep));
 }
+// doomFloor()/blessFloor() scale PER LIVING CREW MEMBER — this IS the deliberate ECON-04
+// anti-spiral guard (confirmed at 03-01's Task 3 decision gate, reaffirmed at 03-02 Task
+// 2): because both floors are livingCount()*perMate rather than a fixed absolute threshold,
+// a shrinking crew never by itself pushes the crew's aggregate favor closer to doom or
+// further from blessing — losing a mate cannot compound into a spiral. A future tuner must
+// NOT "simplify" this to an absolute threshold; that would reintroduce exactly the
+// death-spiral shape this redesign exists to remove.
 function doomFloor(){ return CONFIG.divine.doomFloorPerMate * livingCount(); }
 function blessFloor(){ return CONFIG.divine.blessFloorPerMate * livingCount(); }
 // doomToll(reason): the collective-doom catastrophe helper shared by every episode's
@@ -607,9 +622,20 @@ function renderStrip(){
     const blue = bag.filter(x=>x==='blue').length, white = bag.filter(x=>x==='white').length;
     const total = bag.length;
     const cross = el('div','stat');
+    // D-07/ECON-04 (BOARD-07): the living-crew count and the bag advantage/disadvantage it
+    // is currently earning, read fresh off state on every render — no cached count, no new
+    // transient. Composes the two salting effects into one legible line: a full crew's
+    // extra white (fullCrewBonus()) alongside 03-01's low-favor extra blue (seasExtraBlue()).
+    const crewBonus = fullCrewBonus();
+    const roughBlue = seasExtraBlue();
+    const crewLine = crewBonus>0
+      ? `${lc} living — nearly whole: +${crewBonus}⚪ this leg`
+      : `${lc} living`;
+    const bagLine = roughBlue>0 ? `${crewLine} · +${roughBlue}🔵 (low favor)` : crewLine;
     cross.innerHTML = `<div class="k">Crossing bag</div><div class="v">🔵×${blue} ⚪×${white}</div>`
       + renderBag()
-      + `<div class="small">land next: ${total? white+'-in-'+total : '—'}</div>`;
+      + `<div class="small">land next: ${total? white+'-in-'+total : '—'}</div>`
+      + `<div class="small">${bagLine}</div>`;
     s.appendChild(cross);
   }
   // Favor/seas/doom card (D-05, ECON-02): the crew's aggregate standing with the gods —
@@ -1643,6 +1669,14 @@ function validateBeats(){
 }
 
 /* ---------------------------------------------------------------- CROSSING --- */
+// fullCrewBonus() (D-07, ECON-04): pure read of already-decided state (livingCount()) —
+// no RNG, so startCrossing()'s bag composition stays a pure function of CONFIG.crossing/
+// crewFavor()/livingCount(). A BONUS only: it only ever ADDS white marbles on top of the
+// baseline bag, never removes or adds blue, so a thin crew is never composed a WORSE bag
+// than the same crew-favor level would produce at full crew (the anti-spiral guarantee).
+function fullCrewBonus(){
+  return livingCount() >= CONFIG.crossing.fullCrewAt ? CONFIG.crossing.fullCrewWhiteBonus : 0;
+}
 function startCrossing(){
   const bag=[];
   for(let i=0;i<CONFIG.crossing.blueStart;i++) bag.push('blue');
@@ -1651,11 +1685,18 @@ function startCrossing(){
   // literal (ECON-02). Replaces the retired curse→extra-blue mapping.
   const extra = seasExtraBlue();
   for(let i=0;i<extra;i++) bag.push('blue');
+  // D-07/ECON-04: a near-full living crew adds extra white — more hands at the oars means
+  // land comes sooner. This composes with (never replaces) the low-favor blue-salting
+  // above: a full, pious crew gets the shortest legs; a thin, impious crew the longest;
+  // a thin but pious crew is never worse than baseline, since this only ever adds white.
+  const crewBonus = fullCrewBonus();
+  for(let i=0;i<crewBonus;i++) bag.push('white');
   // _lastDrawn (BOARD-07 board-only transient): which marble color the reducer just
   // pulled, set by drawMarble() immediately before the render that should show it, and
   // cleared at the top of the next drawMarble() call — never read/written by renderBag().
   state.crossing = { bag, whitesAdded:0, atSea:true, _lastDrawn:null };
   if(extra>0) log(`The crew's favor with the gods runs low — the crossing bag is salted with ${extra} extra blue: a longer, hungrier leg.`,'l-bad');
+  if(crewBonus>0) log(`${livingCount()} hands at the oars, nearly the whole crew — the bag carries ${crewBonus} extra white: a shorter leg ahead.`,'l-good');
 }
 function drawMarble(firstDraw){
   state.crossing._lastDrawn = null; // clear the previous draw's flourish before this one
