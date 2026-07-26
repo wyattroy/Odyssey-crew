@@ -569,6 +569,23 @@ function passGate(p){
   });
 }
 
+// BOARD-08 MASKING AUDIT (04-04, final pass — no logic changed, confirmed only): every
+// board sub-renderer was walked against this seam and found already compliant —
+//   - renderPlayers()/renderDice() never read p.commit; the only per-player transients
+//     they draw from (_committing, _boneShow, _delta) are verb-agnostic labels or
+//     reveal-gated fields set one actor at a time inside actPhase's resolutionOrder()
+//     reveal loop (never the all-actors pre-rolled p.lastBone).
+//   - bots' commit is set the instant collectCommits starts (`b.commit = botDecide(...)`)
+//     but nothing renders p.commit until the reveal loop reads it inside resolveEffect —
+//     a bot's choice is exactly as masked as a human's.
+//   - every collectCommits() call site (troy/eat/act/pride/revive/patience) and the one
+//     hand-rolled sequential-gate loop that bypasses it (Orpheus, runHades) honor the
+//     same masked = !directorMode && humans>1 gate before a human's own buttons render
+//     in their ctrl-<id> slot; clearPrompt() wipes every ctrl-<id> slot between turns so
+//     no stale affordance lingers on another seat.
+//   - renderTrack/renderStrip/renderBag (public zones: boat position, hold, favor status,
+//     bag) read only state fields with no gate — by design, per the public/private split.
+// No new `_`-transient, no new masking branch, no collectCommits/passGate change.
 /* The single bot/human seam. kind ∈ 'troy'|'eat'|'act'|'pride'|'revive'|'patience' */
 async function collectCommits(seats, kind, ctx){
   ctx = ctx || {};
