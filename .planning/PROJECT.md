@@ -10,13 +10,13 @@ The commons tension must actually fire: disaster should emerge from the *sum of 
 
 ## Current Milestone: v1.1 Themed Episodes & Interactive Board
 
-**Goal:** Turn the rules-complete prototype into a *felt* game — every scene carries its story's moral through tailored Dare/Abide/Give beats and payoffs, and the whole voyage is played on a visual board instead of a text log.
+**Goal:** Turn the rules-complete prototype into a *felt* game — every scene carries its story's moral through tailored Abide/Dare beats and payoffs, and the whole voyage is played on a visual board instead of a text log.
 
 **Target features:**
 - Per-scene thematic effect tables: for every stage of every episode (4 islands + Hades/Phaeacia/Ithaca), each verb × each roll (1/3/4/6) gets a one-sentence story beat + a payoff tuned to that stage's moral.
 - Encoded design principle (Phase 3, D-11 — supersedes the v1.0 three-verb principle below): Abide serves the commons — it always fills the shared hold, and a high roll earns the gods' notice (favor). Dare transgresses for your own stash — a high roll gets away with it, a low roll means the gods catch you and favor is lost. Favor is the single divine currency: the win condition, the lifeline that buys a life back from the dead (Charon's toll / generalized Orpheus), and the world's mood that shapes the seas and staves off collective doom.
 - Effects-as-balance: these hand-tuned per-stage numbers replace the default `[tune]` constants as the intended economy — the death-spiral goes away (hand-tuned, not sim-tuned this pass).
-- Interactive game board (replaces the raw narration log): boat crossing the sea, the actual blue/white marbles visibly draining from the crossing bag, dice showing the live roll, clickable Dare/Abide/Give, narration surfaced in the board.
+- Interactive game board (replaces the raw narration log): boat crossing the sea, the actual blue/white marbles visibly draining from the crossing bag, dice showing the live roll, clickable Abide/Dare, narration surfaced in the board.
 
 ## Requirements
 
