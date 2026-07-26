@@ -289,7 +289,15 @@ function applyDeltas(p, d){
   if(d.you){ const b=p.satchel; p.satchel=Math.max(0,p.satchel+d.you); const act=p.satchel-b; if(act) parts.push(`${act>0?'+':''}${act}🍖`); }
   if(d.crew){ const b=state.hold; state.hold=Math.max(0,state.hold+d.crew); const act=state.hold-b; if(act) parts.push(`${act>0?'+':''}${act} hold`); }
   if(d.favor){ p.favor+=d.favor; if(state.onIsland) p.islandFavorEarned+=d.favor; parts.push(`${d.favor>0?'+':''}${d.favor}🫒`); }
-  if(d.world){ state.world+=d.world; parts.push(`${d.world>0?'+':''}${d.world} world`); }
+  // CR-01: floor state.world at 0, mirroring the you/crew clamps above. Verified safe:
+  // every doom/bless threshold read against state.world (Helios doomAt:7/blessAt:2,
+  // Sirens doomAt:6) is a positive number, worldStart is 0 for every episode, and
+  // Cyclops's boast penalty lives on state.curse, not state.world — nothing in the
+  // codebase depends on state.world going negative. Without this floor, Sirens' Give
+  // cells (bind/plug-ears) could bank an unbounded negative "Rocks" buffer and
+  // neutralize the reef-wreck mechanic (pre-phase-2 sirensReskin().give enforced this
+  // same floor; beats-authored cells dropped it).
+  if(d.world){ const b=state.world; state.world=Math.max(0,state.world+d.world); const act=state.world-b; if(act) parts.push(`${act>0?'+':''}${act} world`); }
   return parts.join(' · ');
 }
 
