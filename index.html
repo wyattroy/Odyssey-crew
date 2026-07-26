@@ -237,6 +237,15 @@ const CONFIG = {
   // the Hades stop. hadesToll is a distinct at-Hades modifier exposed for 03-07 to tune
   // (currently equal to toll — this plan only sets the shape, not the final numbers).
   charon: { toll: 1, hadesToll: 1 },
+  // CONFIG.hades (ANCHOR-01, 03-05): the rites-scene's own thematic kickers, tier 0 (a
+  // single scene, so no rising arc WITHIN the anchor itself — D-10's escalation is an
+  // across-island shape, not a within-one-scene-anchor one). riteHold layers onto econD's
+  // abideHold (the hold gain when the rites are observed properly and the dead point out
+  // what the ship overlooked); direFavorExtra layers onto econD's dareCaught (the dead's
+  // added offense when pressed too hard and refused, beyond the standard caught-cost). The
+  // gods' notice on Abide's high roll is econD's own abideFavor — no kicker needed there,
+  // per the FAVOR LAW below (Abide is the only favor road, unexceptioned).
+  hades: { riteHold: 1, direFavorExtra: 1 },
   troy: { min:1, max:6 },                              // take t → +t rations, +(7-t) favor
   phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1 },
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
@@ -1740,6 +1749,69 @@ function stakeCheck(actors){
   }
 }
 
+/* ---------------------------------------------------------------- ANCHORS --- */
+// revealNextIsland(): the ONE place that reveals the next face-down island on
+// state.journey — used by Hades' bespoke Tiresias peek (runHades) AND by the Hades
+// Dare scene's own `fx` below (Pitfall 9: the anchor's verb scene CALLS this shared
+// mechanism rather than re-implementing it). Reveals at most one island per call, and
+// is a safe no-op (returns null) once nothing hidden remains — the caller's own `tell`
+// narrates that gracefully rather than the cell falling silent (Pitfall 10).
+function revealNextIsland(){
+  const nextIsland = state.journey.slice(state.beatIndex+1).find(b=>b.type==='island' && !b.revealed);
+  if(nextIsland){ nextIsland.revealed = true; renderTrack(); }
+  return nextIsland || null;
+}
+// ANCHORS (ANCHOR-01/02/04, 03-05): the anchors' declarative scene data, shaped exactly
+// like an EPISODES entry's scenes[] — name/hook/verbs/beats — so the SAME
+// resolveEffect()/narrate()/stakesLine()/validateBeats() path consumes them with zero
+// special-casing (Pitfall 9). Only the two anchors landing THIS plan are here (Hades,
+// Phaeacia); Ithaca's three finale scenes are added in 03-06.
+const ANCHORS = {
+  // Hades (ANCHOR-01, D-08a): the living crew get a real verb moment ABOVE the bespoke
+  // peek/revival mechanics — Abide observes the rites (piety, the favor road, plays the
+  // FAVOR LAW straight, no exception needed); Dare presses the shades for deeper sight,
+  // implemented through the `fx` escape hatch as a call to the SAME revealNextIsland()
+  // the bespoke Tiresias peek uses (never a re-implementation). Because this verb scene
+  // runs BEFORE the peek in the restructured runHades() below, a successful Dare reveals
+  // one island here and the peek immediately after reveals a further one — "deeper sight"
+  // falls out of composing the two calls in order, with no special-casing required.
+  hades: {
+    id:'hades', title:'The Shore of the Dead',
+    scenes:[
+      { name:'The Rites', hook:'The dead throng the grey shore, hungry for word of the living. Pour the libation properly, or press them for more than they mean to give up.',
+        verbs:{ dare:{label:'Dare — press the shades for deeper sight'}, abide:{label:'Abide — observe the rites, mourn properly'} },
+        beats: {
+          abide: {
+            1:{ d:econD('abide',0,1,{crew:CONFIG.hades.riteHold}),
+                tell:(p)=>`The libation is poured. The dead murmur of what the ship overlooked — a scrap for the hold.` },
+            3:{ d:econD('abide',0,3,{crew:CONFIG.hades.riteHold}),
+                tell:(p)=>`Proper mourning, properly done — the hold grows a little.` },
+            4:{ d:econD('abide',0,4,{crew:CONFIG.hades.riteHold}),
+                tell:(p)=>`The rites are observed with real care — the hold grows further.` },
+            6:{ d:econD('abide',0,6,{crew:CONFIG.hades.riteHold}), cls:'l-favor',
+                tell:(p)=>`Perfect piety at the shore of the dead — the hold swells, and the gods take quiet notice.` },
+          },
+          dare: {
+            1:{ d:econD('dare',0,1,{favor:-CONFIG.hades.direFavorExtra}), cls:'l-bad',
+                tell:(p)=>`Pressed too hard — the dead take real offense at being made to answer. Favor lost.` },
+            3:{ d:econD('dare',0,3), fx:(p,bone)=>{ state._hadesGlimpse = revealNextIsland(); },
+                tell:(p)=>state._hadesGlimpse
+                  ? `The shades relent a little — a further glimpse of the road ahead: <b>${state._hadesGlimpse.episode.title}</b>.`
+                  : `The shades have nothing further to give up; the road ahead is already known.` },
+            4:{ d:econD('dare',0,4), fx:(p,bone)=>{ state._hadesGlimpse = revealNextIsland(); },
+                tell:(p)=>state._hadesGlimpse
+                  ? `The dead give up more than they meant to — a further glimpse of the road ahead: <b>${state._hadesGlimpse.episode.title}</b>.`
+                  : `The dead have nothing further to give up; the road ahead is already known.` },
+            6:{ d:econD('dare',0,6), fx:(p,bone)=>{ state._hadesGlimpse = revealNextIsland(); },
+                tell:(p)=>state._hadesGlimpse
+                  ? `A true prophecy wrung from the shades — a further glimpse of the road ahead: <b>${state._hadesGlimpse.episode.title}</b>.`
+                  : `The dead have nothing further to give up; the road ahead is already known.` },
+          },
+        } },
+    ],
+  },
+};
+
 /* ---------------------------------------------------------------- VALIDATION --- */
 // validateBeats() enforces beats-table completeness for every scene that opts into the
 // beats path: a declared scene must use EXACTLY the verbs in VERBS (D-01/ECON-01), any
@@ -1753,7 +1825,9 @@ function stakeCheck(actors){
 function validateBeats(){
   const problems = [];
   const notYetConverted = [];
-  Object.values(EPISODES).forEach(ep=>{
+  // ANCHOR-04: ANCHORS joins the SAME fail-loud coverage gate EPISODES already uses — an
+  // anchor cell cannot be authored outside this gate (Pitfall 10).
+  [...Object.values(EPISODES), ...Object.values(ANCHORS)].forEach(ep=>{
     ep.scenes.forEach(sc=>{
       if(!sc.beats){ notYetConverted.push(`${ep.id} / ${sc.name}`); return; }
       const verbsDeclared = Object.keys(sc.beats).slice().sort();
@@ -1894,12 +1968,24 @@ async function runIsland(beat){
 
 async function runHades(){
   logBeat(`💀 Hades — the shore of the dead`);
-  flavor('You spend rations to take sight from the dead. The drowned may pay Charon to return — or a living mate may pay on their behalf (Orpheus).');
-  // peek: reveal next face-down island
-  const nextIsland = state.journey.slice(state.beatIndex+1).find(b=>b.type==='island' && !b.revealed);
-  if(nextIsland){ nextIsland.revealed=true; log(`👁️ Tiresias grants a peek: the next hidden island is <b>${nextIsland.episode.title}</b>.`,'l-favor'); renderTrack(); }
-  // Hades now reduces to the peek above plus the same shared revival round every other
-  // beat uses (D-06) — the at-Hades toll modifier is honored via revivalRound(true).
+  flavor('The living may observe the rites, or press the shades for a deeper sight. The drowned may pay Charon to return — or a living mate may pay on their behalf (Orpheus).');
+  // ANCHOR-01 (03-05): the living crew's own verb moment, run through the SAME shared
+  // act path every island uses (Pitfall 9) — the bespoke peek and revival mechanics below
+  // are untouched, and stay AFTER this scene so a sailor's own Dare glimpse composes with
+  // (rather than duplicates) the Tiresias peek that follows, and any sailor revived below
+  // is aboard when the ship sails (order matters, per the plan).
+  const hSc = ANCHORS.hades.scenes[0];
+  logBeat(`Scene — ${hSc.name}`);
+  log(`<span class="scene-hook">${hSc.hook}</span>`,'l-sys');
+  if(livingCount()>0) await actPhase('land', hSc, 0);
+  // peek: reveal next face-down island — bespoke, unchanged mechanic (Pitfall 9), now
+  // sourced from the shared revealNextIsland() helper the scene's own Dare `fx` also uses.
+  const nextIsland = revealNextIsland();
+  if(nextIsland){ log(`👁️ Tiresias grants a peek: the next hidden island is <b>${nextIsland.episode.title}</b>.`,'l-favor'); }
+  // Hades now reduces to the verb scene, the peek above, plus the same shared revival
+  // round every other beat uses (D-06) — the at-Hades toll modifier is honored via
+  // revivalRound(true). Fires whether or not anyone is alive to act, and whether or not
+  // anyone is dead (revivalRound is a cheap no-op when deadPl() is empty) — ANCHOR-04.
   await revivalRound(true);
   render();
 }
