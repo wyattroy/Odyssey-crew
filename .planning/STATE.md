@@ -5,15 +5,15 @@ milestone_name: Themed Episodes & Interactive Board
 current_phase: 3
 current_phase_name: Anchor Verb Retrofit & Balance Retune
 status: planning
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-07-26T05:52:00.000Z"
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-07-26T06:02:25.929Z"
 last_activity: 2026-07-26
-last_activity_desc: Phase 4 Plan 3 (action bar — clickable Dare/Abide/Give + eat choices, on-board narration) executed out-of-order ahead of Phase 3; Phase 3 (Anchor Verb Retrofit & Balance Retune) is still the next phase due in numeric sequence
+last_activity_desc: Phase 4 Plan 4 (blind-commit masking audit + ship's-log demotion + final regression pass — Phase 4's last plan) executed out-of-order ahead of Phase 3; Phase 3 (Anchor Verb Retrofit & Balance Retune) is still the next phase due in numeric sequence
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # Project State
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 Phase: 3 — Anchor Verb Retrofit & Balance Retune
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-07-26 — Phase 4 Plan 3 (action bar — clickable Dare/Abide/Give + eat choices, on-board narration) executed out-of-order ahead of Phase 3; Phase 3 (Anchor Verb Retrofit & Balance Retune) is still the next phase due in numeric sequence
+Last activity: 2026-07-26 — Phase 4 Plan 4 (blind-commit masking audit + ship's-log demotion + final regression pass — Phase 4's last plan) executed out-of-order ahead of Phase 3; Phase 3 (Anchor Verb Retrofit & Balance Retune) is still the next phase due in numeric sequence
 
-Progress: [█████████░] 91%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [█████████░] 91%
 | Phase 04 P01 | 20min | 2 tasks | 1 files |
 | Phase 04 P02 | 18min | 2 tasks | 1 files |
 | Phase 04 P03 | 15min | 2 tasks | 1 files |
+| Phase 04 P04 | 20min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -99,10 +100,12 @@ Recent decisions affecting current work:
 - [Phase 4]: renderBag()/renderDice() read only reveal-gated/pure-state transients (state.crossing.bag, state.crossing._lastDrawn, p._boneShow) — never the pre-rolled p.lastBone — establishing the masking pattern later Phase 4 plans (action bar, log demotion) must follow.
 - [Phase 4]: promptButtons()'s board-vs-box placement now keys on seatId!=null alone (director mode no longer diverts buttons to the shared #prompt box) — every human decision kind (act/eat/troy/pride/revive/orpheus/patience) now renders on the board; directorMode's meaning stays scoped to collectCommits' masking flag.
 - [Phase 4]: state._narration (board-only transient) is set ONLY at the narrate()-driven log() call in actPhase's reveal loop, not every log() call — isolates the current beat's story tell from system/hook/flavor lines; cleared per-phase via the existing clearBones() reset.
+- [Phase 4]: BOARD-08 masking audit found every board sub-renderer already compliant with the reveal-gated seam (no logic change needed) — documented inline above collectCommits() as the confirmed invariant.
+- [Phase 4]: Ship's-log demoted into a <details id="logPanel"> panel (closed by default, synced to state.directorMode on game start + toggle change) — log()/renderLog()/state.log untouched (BOARD-09).
 
 ### Pending Todos
 
-- Phase 4 Plans 1-3 (04-01 board tracer, 04-02 crossing strip, 04-03 action bar + narration) were executed out-of-order ahead of Phase 3 per explicit direction. Phase 3 (Anchor Verb Retrofit & Balance Retune) remains unstarted and is still next in ROADMAP.md's numeric execution order (1 → 2 → 3 → 4); 04-01's, 04-02's, and 04-03's Task 3 (checkpoint:human-verify, gate="blocking") still need an orchestrator click-test/screenshot pass to fully close out those plans.
+- Phase 4 (all 4 plans: 04-01 board tracer, 04-02 crossing strip, 04-03 action bar + narration, 04-04 masking audit + log demotion + final pass) was executed out-of-order ahead of Phase 3 per explicit direction. Phase 3 (Anchor Verb Retrofit & Balance Retune) remains unstarted and is still next in ROADMAP.md's numeric execution order (1 → 2 → 3 → 4); every Phase 4 plan's Task 3 (checkpoint:human-verify, gate="blocking") — including 04-04's masking click-test, log-panel check, and browser determinism run — still needs an orchestrator click-test/screenshot pass to fully close out Phase 4 visually.
 
 ### Blockers/Concerns
 
@@ -122,6 +125,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T05:52:00.000Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-07-26T06:02:25.923Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
