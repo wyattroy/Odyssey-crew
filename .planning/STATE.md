@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Themed Episodes & Interactive Board
 current_phase: 03
-current_phase_name: anchor-verb-retrofit-balance-retune
-status: verifying
-stopped_at: Completed 03-07-PLAN.md (balance retune + PROJECT.md truth-up — phase 3 functionally complete)
-last_updated: "2026-07-26T21:32:33.615Z"
+current_phase_name: Economy & Verb Redesign (Anchors + Balance)
+status: milestone-complete
+stopped_at: Phase 03 verified and complete — all 4 v1.1 phases done, milestone ready to close
+last_updated: "2026-07-26T22:10:00.000Z"
 last_activity: 2026-07-26
-last_activity_desc: Phase 03 execution started
+last_activity_desc: Phase 03 complete and verified; v1.1 milestone fully executed (Phase 04 was completed earlier, out of roadmap order)
 progress:
   total_phases: 4
   completed_phases: 4
@@ -23,14 +23,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** The commons tension must actually fire — disaster emerges from the sum of private, individually-reasonable choices, while cooperation stays optimal for *winning* (favor) and defection stays optimal only for *bare survival*.
-**Current focus:** Phase 03 — anchor-verb-retrofit-balance-retune
+**Current focus:** v1.1 milestone complete — ready to close out
 
 ## Current Position
 
-Phase: 03 (anchor-verb-retrofit-balance-retune) — EXECUTING
-Plan: 7 of 7
-Status: Phase complete — ready for verification
-Last activity: 2026-07-26 — Phase 03 execution started
+Phase: — (all 4 v1.1 phases complete)
+Plan: —
+Status: Milestone v1.1 complete — ready for `/gsd-complete-milestone`
+Last activity: 2026-07-26 — Phase 03 complete and verified
+
+Note: Phase 04 (Interactive Board) was executed and verified *before* Phase 03,
+because the board depends only on Phase 1 and is a pure projection of state. Phase
+03's completion therefore closes the milestone rather than advancing to a next phase;
+`phase.complete` reported "next phase 04" purely from roadmap ordering.
 
 Progress: [██████████] 100%
 
@@ -38,7 +43,7 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 11
+- Total plans completed: 18
 - Average duration: — min
 - Total execution time: 0.0 hours
 
@@ -49,6 +54,7 @@ Progress: [██████████] 100%
 | 1 | 2 | - | - |
 | 2 | 5 | - | - |
 | 4 | 4 | - | - |
+| 03 | 7 | - | - |
 
 **Recent Trend:**
 

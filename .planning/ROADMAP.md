@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Effect Engine & Sequential Resolution** - Declarative `beats` data model + generic resolver + coverage validator, with blind commits resolving sequentially against the shared hold (completed 2026-07-25)
 - [x] **Phase 2: Themed Island Content & Favor-Law Reconciliation** - Every island scene (Helios/Cyclops/Sirens/Lotus × 3 stages) authored to its moral with the Dare/Abide/Give asymmetry, favor-law violations reconciled (completed 2026-07-26)
-- [ ] **Phase 3: Economy & Verb Redesign (Anchors + Balance)** - Two verbs (Abide/Dare), favor as the single divine currency and revival lifeline, anchors on the same grammar, tuned so cooperation wins and defection merely survives
+- [x] **Phase 3: Economy & Verb Redesign (Anchors + Balance)** - Two verbs (Abide/Dare), favor as the single divine currency and revival lifeline, anchors on the same grammar, tuned so cooperation wins and defection merely survives (completed 2026-07-26)
 - [x] **Phase 4: Interactive Board** - A visual board (boat, draining marble bag, live dice, clickable verbs, on-board narration/status) replaces the raw log as a pure projection of state (completed 2026-07-26)
 
 ## Phase Details
@@ -162,5 +162,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|-----------|----------------|--------|-----------|
 | 1. Effect Engine & Sequential Resolution | v1.1 | 2/2 | Complete    | 2026-07-25 |
 | 2. Themed Island Content & Favor-Law Reconciliation | v1.1 | 5/5 | Complete    | 2026-07-26 |
-| 3. Economy & Verb Redesign (Anchors + Balance) | v1.1 | 7/7 | In Progress|  |
+| 3. Economy & Verb Redesign (Anchors + Balance) | v1.1 | 7/7 | Complete    | 2026-07-26 |
 | 4. Interactive Board | v1.1 | 4/4 | Complete    | 2026-07-26 |
