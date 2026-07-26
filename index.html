@@ -224,7 +224,11 @@ const CONFIG = {
   meal: 1,
   boneWeights: { 1:0.10, 3:0.40, 4:0.40, 6:0.10 },   // weighted astragaloi
   crossing: { blueStart:5, whiteStart:1, whitePerDraw:1 },
-  charonToll: 1,
+  // CONFIG.charon (D-06, ECON-03): the favor toll that buys a life back — self-pay (reads
+  // as Charon) or crewmate-pay (generalized Orpheus), now offered on ANY beat, not only at
+  // the Hades stop. hadesToll is a distinct at-Hades modifier exposed for 03-07 to tune
+  // (currently equal to toll — this plan only sets the shape, not the final numbers).
+  charon: { toll: 1, hadesToll: 1 },
   troy: { min:1, max:6 },                              // take t → +t rations, +(7-t) favor
   phaeacia: { giftPerPlayer:2, poolFloor:1, poolCap:5, fullGiftRations:4, lesserGiftRations:1 },
   ithaca:  { bowFloor:1, qualifyTop:2, suitorPot:6, endureBonus:2, patiencePenalty:2 },
@@ -785,16 +789,20 @@ async function askHuman(p, kind, ctx){
         {label:'📣 Boast! (+kleos, curse the ship)', value:'dare', cls:'dare'} ], p.id);
   }
   if(kind==='revive'){
-    return promptButtons(`${p.name}: you are among the dead. Pay Charon's toll?`,
-      `Pay ${CONFIG.charonToll}🫒 to cross back and rejoin the ship (you have ${p.favor}🫒).`,
-      [ {label:`⛵ Pay ${CONFIG.charonToll}🫒 to return`, value:'pay', disabled:p.favor<CONFIG.charonToll},
+    // D-06: revival is offered on ANY beat now, not only at Hades — ctx.toll carries the
+    // caller's toll (CONFIG.charon.toll, or CONFIG.charon.hadesToll at the Hades stop).
+    const toll = ctx.toll!=null ? ctx.toll : CONFIG.charon.toll;
+    return promptButtons(`${p.name}: you are among the dead. Pay Charon's toll to return?`,
+      `Favor is the crew's win condition, its lifeline, and the seas' mood, all the same coin — spend ${toll}🫒 to cross back and rejoin the ship (you have ${p.favor}🫒).`,
+      [ {label:`⛵ Pay ${toll}🫒 to return`, value:'pay', disabled:p.favor<toll},
         {label:'💀 Remain in the dark', value:'stay'} ], p.id);
   }
   if(kind==='orpheus'){
     const d = ctx.dead;
+    const toll = ctx.toll!=null ? ctx.toll : CONFIG.charon.toll;
     return promptButtons(`${p.name}: raise ${d.name} from the dead? (Orpheus)`,
-      `Spend ${CONFIG.charonToll} of your own 🫒 (you have ${p.favor}) to bring ${d.name} back. Or let them lie to keep your lead.`,
-      [ {label:`🎼 Pay ${CONFIG.charonToll}🫒 to raise ${d.name}`, value:'pay', disabled:p.favor<CONFIG.charonToll},
+      `Spend ${toll} of your own 🫒 (you have ${p.favor}) — the same favor that would have won you the game — to bring ${d.name} back. Or let them lie to keep your lead.`,
+      [ {label:`🎼 Pay ${toll}🫒 to raise ${d.name}`, value:'pay', disabled:p.favor<toll},
         {label:'…let them lie', value:'no'} ], p.id);
   }
   if(kind==='patience'){
@@ -834,11 +842,13 @@ function botDecide(p, kind, ctx){
     return (T.boast && rnd()<0.7) ? 'dare' : 'abide';
   }
   if(kind==='revive'){
-    return p.favor>=CONFIG.charonToll ? 'pay' : 'stay';
+    const toll = ctx.toll!=null ? ctx.toll : CONFIG.charon.toll;
+    return p.favor>=toll ? 'pay' : 'stay';
   }
   if(kind==='orpheus'){
     const d = ctx.dead;
-    const canSpare = p.favor - CONFIG.charonToll >= CONFIG.ithaca.bowFloor;
+    const toll = ctx.toll!=null ? ctx.toll : CONFIG.charon.toll;
+    const canSpare = p.favor - toll >= CONFIG.ithaca.bowFloor;
     if(!canSpare) return 'no';
     if(p.temperament==='pious') return 'pay';
     if(p.temperament==='balanced' && livingCount()<=2) return 'pay';
@@ -1667,13 +1677,16 @@ async function runCrossing(){
   render();
   let first=true;
   while(true){
-    if(deadEndCheck()) return;
+    if(await deadEndCheck()) return;
     const m = drawMarble(first); first=false;
     renderStrip();
     if(m==='white'){ state.crossing.atSea=false; log(`⚪ Land ho!`,'l-good'); renderStrip(); return; }
     log(`🔵 Still at sea.`,'l-sys');
+    // D-06: offer revival once per sea leg, before this leg's meal, so a returning sailor
+    // can eat and act this same leg (a cheap no-op via revivalRound()'s own dead-check).
+    await revivalRound();
     await eatPhase();
-    if(deadEndCheck()) return;
+    if(await deadEndCheck()) return;
     if(livingCount()>0) await actPhase('sea', null, 0);
     render();
     await botPause();
@@ -1692,10 +1705,13 @@ async function runIsland(beat){
   render();
   for(let si=0; si<ep.scenes.length; si++){
     const sc = ep.scenes[si];
-    if(deadEndCheck()) break;
+    if(await deadEndCheck()) break;
     logBeat(`Scene ${si+1}: ${sc.name}`);
     log(`<span class="scene-hook">${sc.hook}</span>`,'l-sys');
     state.ep._drunkBefore = state.ep.drunk; state.ep._progBefore = state.ep.progress;
+    // D-06: offer revival at the top of every island scene, before this scene's meal, so
+    // a returning sailor can eat and act this same scene (cheap no-op if nobody is dead).
+    await revivalRound();
     await eatPhase();
     if(livingCount()>0) await actPhase('land', sc, si);
     // Cyclops scene 3 pride sub-commit
@@ -1710,28 +1726,73 @@ async function runIsland(beat){
 
 async function runHades(){
   logBeat(`💀 Hades — the shore of the dead`);
-  flavor('You spend rations to take sight from the dead. The drowned may pay Charon to return.');
+  flavor('You spend rations to take sight from the dead. The drowned may pay Charon to return — or a living mate may pay on their behalf (Orpheus).');
   // peek: reveal next face-down island
   const nextIsland = state.journey.slice(state.beatIndex+1).find(b=>b.type==='island' && !b.revealed);
   if(nextIsland){ nextIsland.revealed=true; log(`👁️ Tiresias grants a peek: the next hidden island is <b>${nextIsland.episode.title}</b>.`,'l-favor'); renderTrack(); }
-  await revivalRound();
+  // Hades now reduces to the peek above plus the same shared revival round every other
+  // beat uses (D-06) — the at-Hades toll modifier is honored via revivalRound(true).
+  await revivalRound(true);
   render();
 }
-async function revivalRound(){
-  const dead = deadPl();
-  if(dead.length===0){ log(`No souls wait on the shore.`,'l-sys'); return; }
-  // self-revival (Charon)
-  await collectCommits(dead, 'revive', {});
-  for(const p of dead){
-    if(p.commit==='pay' && p.favor>=CONFIG.charonToll){ p.favor-=CONFIG.charonToll; p.status='alive'; p.satchel=0; log(`⛵ ${p.name} pays Charon ${CONFIG.charonToll}🫒 and rejoins the ship.`,'l-good'); }
-    else log(`${p.name} remains among the dead.`,'l-sys');
+// favorRevive(dead, payer, toll): the ONE place a favor toll buys a life back (T-03-06).
+// payer may be the dead player themself (self-pay reads as Charon) or a living crewmate
+// (crewmate-pay reads as Orpheus). Checks affordability, debits the payer, resurrects the
+// dead player with an empty satchel and a cleared lotus flag, logs a line naming who paid,
+// and returns whether the toll was paid. Every toll debit in the file routes through this
+// one function — no other site may hand-roll a "pay a toll, return a sailor" move.
+function favorRevive(dead, payer, toll){
+  if(payer.favor < toll) return false;
+  payer.favor -= toll;
+  dead.status = 'alive';
+  dead.satchel = 0;
+  dead.lotusStruck = false;
+  if(payer===dead){
+    log(`⛵ ${dead.name} pays Charon ${toll}🫒 and rejoins the ship.`,'l-good');
+  } else {
+    log(`🎼 ${payer.name} spends ${toll}🫒 to raise ${dead.name} from the dead (Orpheus) — favor is the win condition, the lifeline and the seas' mood, all spent at once.`,'l-favor');
   }
-  // Orpheus: living may raise the still-dead
-  for(const d of deadPl()){
-    const helpers = livingPl().filter(h=>h.favor>=CONFIG.charonToll);
+  return true;
+}
+// revivalRound(atHades): generalized favor-revival (D-06, ECON-03) — callable from any
+// beat (island scenes, sea legs, Hades, and deadEndCheck's favor-bankruptcy check), not
+// Hades-only. A cheap, RNG-free no-op when nobody is dead: returns before any prompt, so a
+// whole-crew-alive voyage costs nothing (T-03-05 — the loop is strictly draining, never
+// cyclical, since every revival spends real favor). Resolves in two passes, both walked in
+// resolutionOrder() for deterministic, documented turn order — no rnd() call anywhere in
+// this function, and no reordering of any existing rnd() draw (Pitfall 5):
+//   1) every dead player may pay their own toll (self-pay, reads as Charon);
+//   2) for anyone still dead, the living crew is walked in order offering to pay on their
+//      behalf (Orpheus), stopping at the first mate who pays.
+// Bots decide silently through botDecide; humans go through askHuman behind the same
+// passGate/director-mode gate collectCommits already uses elsewhere — no second masking
+// path is introduced (Pitfall 2, T-03-08).
+async function revivalRound(atHades){
+  if(deadPl().length===0) return;
+  const toll = atHades ? CONFIG.charon.hadesToll : CONFIG.charon.toll;
+  const dead = resolutionOrder(deadPl());
+  await collectCommits(dead, 'revive', {toll});
+  for(const p of dead){
+    if(p.status!=='dead') continue;
+    if(p.commit==='pay'){
+      if(!favorRevive(p, p, toll)) log(`${p.name} reaches for Charon's toll but cannot afford it — remains among the dead.`,'l-sys');
+    } else {
+      log(`${p.name} remains among the dead.`,'l-sys');
+    }
+  }
+  for(const d of resolutionOrder(deadPl())){
+    const helpers = resolutionOrder(livingPl()).filter(h=>h.favor>=toll);
     for(const h of helpers){
-      const choice = await (h.isBot ? Promise.resolve(botDecide(h,'orpheus',{dead:d})) : (async()=>{ h._committing=true; renderPlayers(); if(!state.directorMode && state.humanCount>1) await passGate(h); const c=await askHuman(h,'orpheus',{dead:d}); h._committing=false; renderPlayers(); return c; })());
-      if(choice==='pay' && h.favor>=CONFIG.charonToll){ h.favor-=CONFIG.charonToll; d.status='alive'; d.satchel=0; log(`🎼 ${h.name} spends ${CONFIG.charonToll}🫒 to raise ${d.name} from the dead (Orpheus).`,'l-favor'); break; }
+      let choice;
+      if(h.isBot){
+        choice = botDecide(h, 'orpheus', {dead:d, toll});
+      } else {
+        h._committing=true; renderPlayers();
+        if(!state.directorMode && state.humanCount>1) await passGate(h);
+        choice = await askHuman(h, 'orpheus', {dead:d, toll});
+        h._committing=false; renderPlayers();
+      }
+      if(choice==='pay' && favorRevive(d, h, toll)) break;
     }
   }
 }
@@ -1812,16 +1873,17 @@ async function runIthaca(){
 }
 
 /* ---------------------------------------------------------------- SAFETY / END --- */
-function deadEndCheck(){
-  // never allow a true dead-end: if all are dead, either auto-Charon the solvent, or end.
+// deadEndCheck() (D-06, ECON-04): favor bankruptcy is now the ONLY permanent end — this is
+// the sole place that ends the game on a wipe, and it always resolves to a verdict rather
+// than a stall. The old bespoke auto-Charon branch is retired: when nobody lives, a solvent
+// corpse now returns through the ONE shared revival path (favorRevive/revivalRound) instead
+// of a hand-rolled toll here. Only if that round still leaves the whole crew dead does this
+// log the explicit favor-bankruptcy line and finish the game.
+async function deadEndCheck(){
   if(livingCount()>0) return false;
-  const solvent = deadPl().filter(p=>p.favor>=CONFIG.charonToll);
-  if(solvent.length>0){
-    solvent.forEach(p=>{ p.favor-=CONFIG.charonToll; p.status='alive'; p.satchel=0; log(`🌊 The tide carries ${p.name} back from the dead (Charon paid).`,'l-good'); });
-    render();
-    return false;
-  }
-  log(`☠️ The whole crew is dead with no favor left to return. The voyage ends here.`,'l-die');
+  await revivalRound();
+  if(livingCount()>0) return false;
+  log(`☠️ The crew could not afford to bring anyone back — favor bankruptcy. The voyage ends here.`,'l-die');
   finishGame(true);
   return true;
 }
@@ -1891,14 +1953,14 @@ async function runGame(){
     // crossing precedes every beat after Troy
     await runCrossing();
     if(state.over) return;
-    if(deadEndCheck()) { if(state.over) return; }
+    if(await deadEndCheck()) { if(state.over) return; }
     switch(beat.type){
       case 'island':   await runIsland(beat); break;
       case 'hades':    await runHades(); break;
       case 'phaeacia': await runPhaeacia(); break;
       case 'ithaca':   await runIthaca(); return;
     }
-    if(deadEndCheck()) return;
+    if(await deadEndCheck()) return;
   }
   if(!state.over) finishGame();
 }
