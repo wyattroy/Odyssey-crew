@@ -4,16 +4,16 @@ milestone: v1.1
 milestone_name: Themed Episodes & Interactive Board
 current_phase: 2
 current_phase_name: Themed Island Content & Favor-Law Reconciliation
-status: planning
-stopped_at: Phase 2 context gathered
-last_updated: "2026-07-26T03:28:21.476Z"
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-07-26T04:02:26.876Z"
 last_activity: 2026-07-25
-last_activity_desc: Phase 1 complete, transitioned to Phase 2
+last_activity_desc: Phase 2 execution started
 progress:
   total_phases: 2
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 7
+  completed_plans: 3
 ---
 
 # Project State
@@ -23,16 +23,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-25)
 
 **Core value:** The commons tension must actually fire — disaster emerges from the sum of private, individually-reasonable choices, while cooperation stays optimal for *winning* (favor) and defection stays optimal only for *bare survival*.
-**Current focus:** Phase 01 — effect-engine-sequential-resolution
+**Current focus:** Phase 2 — Themed Island Content & Favor-Law Reconciliation
 
 ## Current Position
 
-Phase: 2 — Themed Island Content & Favor-Law Reconciliation
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-07-25 — Phase 1 complete, transitioned to Phase 2
+Phase: 2 (Themed Island Content & Favor-Law Reconciliation) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
+Last activity: 2026-07-25 — Phase 2 execution started
 
-Progress: [██████████] 100%
+Progress: [████░░░░░░] 43%
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [██████████] 100%
 |------|----------|-------|-------|
 | Phase 01 P01 | 20min | 3 tasks | 1 files |
 | Phase 01 P02 | 12min | 2 tasks | 1 files |
+| Phase 02 P01 | 15min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ Recent decisions affecting current work:
 - [Phase ?]: resolutionOrder(actors) — single fixed-turn-order seam (ascending seat id, no rnd()) governing both eatPhase and Act reveal-loop resolution against the shared hold; swap only this function for a future favor-weighted/turn-chip scheme
 - [Phase ?]: canAffordDraw(d) — shared deny-not-clamp feasibility gate; extended beyond resolveEffect's beats/table paths into mkHeliosDare and Cyclops 'The Stake' give-wine (the only other closures that draw directly from the hold) so the never-partially-applied guarantee (RESOLVE-02) holds uniformly
 - [Phase ?]: pickLowest and the eat-phase bone lot-cast fully retired; hold shortfall now resolves by fixed turn order, not chance
+- [Phase ?]: Helios beats fully authored (all 3 scenes) using only shared CONFIG.fx tiers (added big/huge); Dare-6 bounty escalates non-decreasingly scene to scene while Abide/Give stay flat
+- [Phase ?]: scratchpad/harness.mjs (vm-context headless Node harness) established as the reusable no-browser verification tool for the rest of phase 2
 
 ### Pending Todos
 
@@ -99,6 +102,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-07-26T03:28:21.469Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-themed-island-content-favor-law-reconciliation/02-CONTEXT.md
+Last session: 2026-07-26T04:02:26.870Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
